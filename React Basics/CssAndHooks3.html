@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CssAndhooks3</title>
+  </head>
+  <body>
+    <div class="js-container"></div> <!-- container for react -->
+<!--above is html structure--> 
+    <script src="react-basics.js"></script> <!--load from file -->
+    <script src="https://unpkg.com/supersimpledev@8.6.4/external-library.js"></script> <!-- external-library -->
+    <!-- how to load an external library -->
+
+    <script src="https://unpkg.com/supersimpledev/dayjs.js"></script>
+
+    <script src="https://unpkg.com/supersimpledev/react.js"></script>
+    <script src="https://unpkg.com/supersimpledev/react-dom.js"></script>
+
+    <script src="https://unpkg.com/supersimpledev/babel.js"></script> <!-- external library for js xml translation -->
+    <script type="text/babel"> 
+        
+        function App() {
+          const [time, setTime] = React.useState(dayjs().format('HH:mm:ss'));
+
+
+          React.useEffect(()=> {
+            setInterval(() => {
+              setTime(dayjs().format('HH:mm:ss'));
+            }, 1000);
+            console.log('run code');
+          }, []); // important to include [] so useEffect runs once
+
+          return (
+            <p>Current time: {time}</p>
+          )
+        }
+
+      const container = document.querySelector('.js-container');
+      ReactDOM.createRoot(container).render(<App />); 
+    </script> <!-- react setup -->
+  </body>
+</html>

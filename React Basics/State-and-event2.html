@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>React Basics</title>
+    <style>
+      
+    </style>
+  </head>
+  <body>
+    <div class="js-container"></div> <!-- container for react -->
+<!--above is html structure--> 
+    <script src="react-basics.js"></script> <!--load from file -->
+    <script src="https://unpkg.com/supersimpledev@8.6.4/external-library.js"></script> <!-- external-library -->
+    <!-- how to load an external library -->
+
+    <script src="https://unpkg.com/supersimpledev/react.js"></script>
+    <script src="https://unpkg.com/supersimpledev/react-dom.js"></script>
+
+    <script src="https://unpkg.com/supersimpledev/babel.js"></script> <!-- external library for js xml translation -->
+    <script type="text/babel"> 
+
+
+      function App() {
+        const [inputText, setInputText] = React.useState('');
+
+        function saveInputText(event)
+        {
+          setInputText(event.target.value);
+        }
+
+        function resetText() {
+          setInputText('');
+        }
+
+        function setExampleText() {
+          setInputText('Bob');
+        }
+
+        return (
+          <>
+          
+          <input
+            onChange={saveInputText}
+            placeholder="Type a name here"
+            value={inputText}
+            />
+            <button onClick={resetText}>
+              Reset
+            </button>
+            <button onClick={setExampleText}>
+              Example
+            </button>
+
+              <p> Hello {inputText}</p>
+            </>
+          )
+        }
+
+      const container = document.querySelector('.js-container');
+      ReactDOM.createRoot(container).render(<App />); 
+    </script> <!-- react setup -->
+  </body>
+</html>

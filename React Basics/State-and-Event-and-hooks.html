@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>State + event + hooks</title>
+
+    <style>
+
+        .button-container {
+            background-color: rgb(222, 222, 222);
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            align-items: center;
+        }
+        .cbutton {
+            color: white;
+            background-color: rgb(61, 0, 255);
+            border: none;
+            margin: 5px;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        body {
+            margin: 0;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="js-container"></div> <!-- container for react -->
+<!--above is html structure--> 
+    <script src="react-basics.js"></script> <!--load from file -->
+    <script src="https://unpkg.com/supersimpledev@8.6.4/external-library.js"></script> <!-- external-library -->
+    <!-- how to load an external library -->
+
+    <script src="https://unpkg.com/supersimpledev/react.js"></script>
+    <script src="https://unpkg.com/supersimpledev/react-dom.js"></script>
+
+    <script src="https://unpkg.com/supersimpledev/babel.js"></script> <!-- external library for js xml translation -->
+    <script type="text/babel"> 
+
+        function App() {
+            const [count, setCount] = React.useState(0);
+            const buttonRef = React.useRef();
+
+            function increaseCount() {
+                setCount(count + 1);
+            }
+
+            function resetCount() {
+                setCount(0);
+            }
+
+            function autoClick() {
+                setInterval(() => {
+                    const buttonElem = buttonRef.current;
+                    if (buttonElem) {
+                        buttonElem.click();
+                    }
+                }, 1000);
+            }
+
+            return (
+                <>
+                <div className="button-container">
+                    <button
+                    onClick={increaseCount}
+                    ref={buttonRef}
+                    className="cbutton"
+                    >
+                    Clicked {count} {count === 1 ? 'time' : 'times'}
+                    </button>
+                    <button onClick={resetCount}className="cbutton">
+                        Reset
+                    </button>
+                    <button onClick={autoClick}className="cbutton">
+                        Auto Click
+                    </button>
+                </div>
+                </>
+            );
+        }
+        
+
+      const container = document.querySelector('.js-container');
+      ReactDOM.createRoot(container).render(<App />); 
+    </script> <!-- react setup -->
+  </body>
+</html>

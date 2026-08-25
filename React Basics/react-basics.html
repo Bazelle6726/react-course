@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>React Basics</title>
+  </head>
+  <body>
+    <div class="js-container"></div> <!-- container for react -->
+<!--above is html structure--> 
+    <script src="react-basics.js"></script> <!--load from file -->
+    <script src="https://unpkg.com/supersimpledev@8.6.4/external-library.js"></script> <!-- external-library -->
+    <!-- how to load an external library -->
+
+    <script src="https://unpkg.com/supersimpledev/react.js"></script>
+    <script src="https://unpkg.com/supersimpledev/react-dom.js"></script>
+
+    <script src="https://unpkg.com/supersimpledev/babel.js"></script> <!-- external library for js xml translation -->
+    <script type="text/babel"> 
+        const button = <button>hello</button>;
+        const paragraph = <p>this is a paragraph</p>;
+
+        const div = (
+            <div>
+                <button>hello</button>
+                <p>this is a paragraph {2 + 2}</p>
+            </div>
+        );
+
+      const container = document.querySelector('.js-container');
+      ReactDOM.createRoot(container).render(div); 
+    </script> <!-- react setup -->
+  </body>
+</html>
