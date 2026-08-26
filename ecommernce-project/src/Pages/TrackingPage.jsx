@@ -1,20 +1,22 @@
 import { Header } from '../Components/Header'
+import { Link } from 'react-router'
 import './trackingPage.css'
 export function TrackingPage() {
     return (
         <>
             <title>Tracking</title>
+            <link rel="icon" type="image/svg+xml" href="home-favicon.png"/>
 
             <Header />
 
             <div className="header">
                 <div class="left-section">
-                    <a href="/" class="header-link">
+                    <Link to="/" class="header-link">
                         <img class="logo"
                             src="images/logo-white.png" />
                         <img class="mobile-logo"
                             src="images/mobile-logo-white.png" />
-                    </a>
+                    </Link>
                 </div>
 
                 <div class="middle-section">
@@ -26,24 +28,24 @@ export function TrackingPage() {
                 </div>
 
                 <div class="right-section">
-                    <a class="orders-link header-link" href="/orders">
+                    <Link class="orders-link header-link" to="/orders">
 
                         <span class="orders-text">Orders</span>
-                    </a>
+                    </Link>
 
-                    <a class="cart-link header-link" href="/checkout">
+                    <Link class="cart-link header-link" to="/checkout">
                         <img class="cart-icon" src="images/icons/cart-icon.png" />
                         <div class="cart-quantity">3</div>
                         <div class="cart-text">Cart</div>
-                    </a>
+                    </Link>
                 </div>
             </div>
 
             <div className="tracking-page">
                 <div class="order-tracking">
-                    <a class="back-to-orders-link link-primary" href="/orders">
+                    <Link class="back-to-orders-link link-primary" to="/orders">
                         View all orders
-                    </a>
+                    </Link>
 
                     <div class="delivery-date">
                         Arriving on Monday, June 13
