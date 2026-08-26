@@ -1,5 +1,5 @@
 import { Header } from '../Components/Header';
-import { BuyAgain } from '../assets/images/icons/buy-again.png';
+import BuyAgain from '../assets/images/icons/buy-again.png';
 import './ordersPage.css';
 
 export function OrdersPage() {
