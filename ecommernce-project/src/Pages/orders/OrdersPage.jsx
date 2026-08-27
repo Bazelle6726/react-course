@@ -1,13 +1,13 @@
 import axios from 'axios';
 import { useState, useEffect, Fragment } from 'react';
-import { Header } from '../Components/Header';
-import { formatMoney } from '../utils/money'
-import BuyAgain from '../assets/images/icons/buy-again.png';
+import { Header } from '../../Components/Header';
+import { formatMoney } from '../../utils/money'
+import BuyAgain from '../../assets/images/icons/buy-again.png';
 import './ordersPage.css';
 import dayjs from 'dayjs';
 
 export function OrdersPage({ cart }) {
-    const [order, setOrders] = useState([]);
+    const [orders, setOrders] = useState([]);
 
     useEffect(() => {
         axios.get('/api/orders?expand=products')
@@ -27,7 +27,11 @@ export function OrdersPage({ cart }) {
                 <div class="page-title">Your Orders</div>
 
                 <div class="orders-grid">
-                    <div class="order-container">
+                    {orders.map((order)=>{
+                        return (
+                    
+                    <div key={order.id} class="order-container">
+                        
 
                         <div class="order-header">
                             <div class="order-header-left-section">
@@ -50,7 +54,7 @@ export function OrdersPage({ cart }) {
                         <div class="order-details-grid">
                             {order.products.map((orderProduct) => {
                                 return (
-                                    <fragment key={orderProduct.product.id}>
+                                    <Fragment key={orderProduct.product.id}>
                                         <div class="product-image-container">
                                             <img src={orderProduct.product.image} />
                                         </div>
@@ -78,7 +82,7 @@ export function OrdersPage({ cart }) {
                                                 </button>
                                             </a>
                                         </div>
-                                    </fragment>
+                                    </Fragment>
                                 );
                             })}
 
@@ -86,6 +90,8 @@ export function OrdersPage({ cart }) {
 
                         </div>
                     </div>
+                    );
+                    })}
                 </div>
             </div>
         </>
