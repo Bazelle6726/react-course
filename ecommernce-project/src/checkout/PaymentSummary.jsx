@@ -6,7 +6,8 @@ export function PaymentSummary({ paymentSummary }) {
             <div className="payment-summary-title">
                 Payment Summary
             </div>
-
+        {paymentSummary && (
+            <>
             <div className="payment-summary-row">
                 <div>Items ({paymentSummary.totalItems}):</div>
                 <div className="payment-summary-money">
@@ -36,6 +37,8 @@ export function PaymentSummary({ paymentSummary }) {
             <button className="place-order-button button-primary">
                 Place your order
             </button>
+            </>
+        )};
         </div>
-    )
+    );
 }
