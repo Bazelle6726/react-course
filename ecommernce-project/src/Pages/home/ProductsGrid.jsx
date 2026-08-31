@@ -1,6 +1,3 @@
-import axios from 'axios';
-import { useState } from 'react';
-import { formatMoney } from '../../utils/money';
 import { Product } from './Product';
 
 export function ProductsGrid({ products, loadCart }) {

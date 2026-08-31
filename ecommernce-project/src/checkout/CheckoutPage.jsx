@@ -9,20 +9,20 @@ import MobileLogo from '../assets/images/mobile-logo.png';
 import './checkoutHeader.css'
 import './checkoutPage.css'
 
-export function CheckoutPage ( {cart} ) {
+export function CheckoutPage({ cart, loadCart }) {
     const [deliveryOptions, setDeliveryOptions] = useState([]);
     const [paymentSummary, setPaymentSummary] = useState(null);
 
     useEffect(() => {
         const fetchCheckoutData = async () => {
-let response = await axios.get('/api/delivery-options?expand=estimateDeliveryTime')
-                setDeliveryOptions(response.data);
-        response = axios.get('/api/payment-summary')
-                setPaymentSummary(response.data);
+            let response = await axios.get('/api/delivery-options?expand=estimatedDeliveryTime')
+            setDeliveryOptions(response.data);
+            response = axios.get('/api/payment-summary');
+            setPaymentSummary(response.data);
         };
-        
-            fetchCheckoutData();
-    }, []);
+
+        fetchCheckoutData();
+    }, [cart]);
 
 
     return (
@@ -56,9 +56,9 @@ let response = await axios.get('/api/delivery-options?expand=estimateDeliveryTim
 
                 <div className="checkout-grid">
                     <OrderSummary cart={cart} deliveryOptions={deliveryOptions} />
-                        
-                        
-                            <PaymentSummary paymentSummary={paymentSummary} />
+
+
+                    <PaymentSummary paymentSummary={paymentSummary} loadCart={loadCart} />
                 </div>
             </div>
         </>
