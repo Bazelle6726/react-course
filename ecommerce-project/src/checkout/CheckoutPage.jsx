@@ -12,16 +12,23 @@ import './checkoutPage.css'
 export function CheckoutPage({ cart, loadCart }) {
     const [deliveryOptions, setDeliveryOptions] = useState([]);
     const [paymentSummary, setPaymentSummary] = useState(null);
+    const [loadError, setLoadError] = useState(false);
 
     useEffect(() => {
         const fetchCheckoutData = async () => {
-            let response = await axios.get(
-                '/api/delivery-options?expand=estimatedDeliveryTime'
-            );
-            setDeliveryOptions(response.data);
+            try {
+                let response = await axios.get(
+                    '/api/delivery-options?expand=estimatedDeliveryTime'
+                );
+                setDeliveryOptions(response.data);
 
-            response = await axios.get('/api/payment-summary');
-            setPaymentSummary(response.data);
+                response = await axios.get('/api/payment-summary');
+                setPaymentSummary(response.data);
+                setLoadError(false);
+            } catch (error) {
+                console.error('Could not load checkout data', error);
+                setLoadError(true);
+            }
         };
 
         fetchCheckoutData();
@@ -56,6 +63,12 @@ export function CheckoutPage({ cart, loadCart }) {
 
             <div className="checkout-page">
                 <div className="page-title">Review your order</div>
+
+                {loadError && (
+                    <div className="load-error" role="alert">
+                        Sorry, we couldn't load your checkout details. Please check the backend is running, then refresh.
+                    </div>
+                )}
 
                 <div className="checkout-grid">
                     <OrderSummary cart={cart} deliveryOptions={deliveryOptions} loadCart={loadCart} />

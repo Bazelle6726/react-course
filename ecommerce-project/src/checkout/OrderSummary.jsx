@@ -13,14 +13,21 @@ export function OrderSummary({ cart, deliveryOptions, loadCart }) {
           });
 
         const deleteCartItem = async () => {
-          await axios.delete(`/api/cart-items/${cartItem.productId}`);
-          await loadCart();
+          try {
+            await axios.delete(`/api/cart-items/${cartItem.productId}`);
+            await loadCart();
+          } catch (error) {
+            console.error('Could not remove the item', error);
+            alert('Sorry, we could not remove this item. Please try again.');
+          }
         };
 
         return (
           <div key={cartItem.productId} className="cart-item-container">
             <div className="delivery-date">
-              Delivery date: {dayjs(selectedDeliveryOption.estimatedDeliveryTimeMs).format('dddd, MMMM D')}
+              {selectedDeliveryOption
+                ? `Delivery date: ${dayjs(selectedDeliveryOption.estimatedDeliveryTimeMs).format('dddd, MMMM D')}`
+                : 'Choose a delivery option'}
             </div>
 
             <div className="cart-item-details-grid">

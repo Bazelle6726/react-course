@@ -155,3 +155,7 @@
   height: 34px;
   margin-top: 1px;
 }
+/* The page's top margin only clears the fixed header; leave a gap below it. */
+.home-page .load-error {
+  margin-top: 80px;
+}

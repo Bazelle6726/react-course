@@ -6,12 +6,18 @@ export function Product({ product, loadCart }) {
     const [quantity, setQuantity] = useState(1);
 
     const addToCart = async () => {
-                    axios.post('/api/cart-items', {
-                        productId: product.id,
-                        quantity
-                    });
-                    await loadCart();
-                };
+        try {
+            // Wait for the save before reloading, or the cart count lags behind.
+            await axios.post('/api/cart-items', {
+                productId: product.id,
+                quantity
+            });
+            await loadCart();
+        } catch (error) {
+            console.error('Could not add to cart', error);
+            alert('Sorry, we could not add this to your cart. Please try again.');
+        }
+    };
 
                 const selectQuantity = (event) => {
                     const quantitySelected = Number(event.target.value);

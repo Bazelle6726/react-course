@@ -14,8 +14,13 @@ function App() {
  const [cart, setCart] = useState([]);
 
   const loadCart = async () => {
-const response = await axios.get('/api/cart-items?expand=product');
-          setCart(response.data);
+    try {
+      const response = await axios.get('/api/cart-items?expand=product');
+      setCart(response.data);
+    } catch (error) {
+      // Keep showing the last cart we had; pages report their own load errors.
+      console.error('Could not load the cart', error);
+    }
   };
 
   useEffect(() => {
@@ -27,8 +32,8 @@ const response = await axios.get('/api/cart-items?expand=product');
       <Route index element={<HomePage cart={cart} loadCart={loadCart} />} />
       <Route path="checkout" element={<CheckoutPage cart={cart} loadCart={loadCart} />} />
       <Route path="orders" element={<OrdersPage cart={cart} />} />
-      <Route path="tracking" element={<TrackingPage />} />
-      <Route path="*" element={<NotFoundPage />} />
+      <Route path="tracking" element={<TrackingPage cart={cart} />} />
+      <Route path="*" element={<NotFoundPage cart={cart} />} />
     </Routes>
 
   )

@@ -103,3 +103,13 @@ select:focus,
 input:focus {
   outline: 2px solid rgb(25, 135, 84);
 }
+/* Shown when a page can't reach the backend. */
+.load-error {
+  margin: 20px;
+  padding: 12px 16px;
+  border: 1px solid rgb(220, 53, 69);
+  border-radius: 8px;
+  background-color: rgb(253, 236, 238);
+  color: rgb(132, 32, 41);
+  font-size: 15px;
+}

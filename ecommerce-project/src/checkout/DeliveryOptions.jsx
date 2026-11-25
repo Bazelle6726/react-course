@@ -4,8 +4,7 @@ import { formatMoney } from "../utils/money";
 
 export function DeliveryOptions({ cartItem, deliveryOptions, loadCart }) {
     return (
-        <div key={deliveryOptions.id}
-            className="delivery-options">
+        <div className="delivery-options">
             <div className="delivery-options-title">
                 Choose a delivery option:
             </div>
@@ -16,11 +15,17 @@ export function DeliveryOptions({ cartItem, deliveryOptions, loadCart }) {
                     priceString = `${formatMoney(deliveryOption.priceCents)} - Shipping`;
                 }
                 const updateDeliveryOption = async () => {
-                    axios.put(`/api/cart-items/${cartItem.productId}`, {deliveryOptionId: deliveryOption.id
-
-                    });
-                    await loadCart();
-                } 
+                    try {
+                        // Wait for the save before reloading, or the old option comes back.
+                        await axios.put(`/api/cart-items/${cartItem.productId}`, {
+                            deliveryOptionId: deliveryOption.id
+                        });
+                        await loadCart();
+                    } catch (error) {
+                        console.error('Could not update the delivery option', error);
+                        alert('Sorry, we could not change the delivery option. Please try again.');
+                    }
+                };
                 return (
                     <div key={deliveryOption.id} className="delivery-option"
                     onClick={updateDeliveryOption}>
@@ -30,7 +35,7 @@ export function DeliveryOptions({ cartItem, deliveryOptions, loadCart }) {
                             name={`delivery-option-${cartItem.productId}`} />
                         <div>
                             <div className="delivery-option-date">
-                                {dayjs(deliveryOption.estimateDeliveryTimeMs).format('dddd, MMMM D')}
+                                {dayjs(deliveryOption.estimatedDeliveryTimeMs).format('dddd, MMMM D')}
                             </div>
                             <div className="delivery-option-price">
                                 {priceString}

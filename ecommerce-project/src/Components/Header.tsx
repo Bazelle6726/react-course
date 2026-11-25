@@ -6,7 +6,7 @@ import MobileLogoWhite from '../assets/images/icons/mobile-logo-white.png';
 import './header.css';
 
 type HeaderProps = {
-    cart: {
+    cart?: {
         productId: string;
         quantity: number;
         deliveryOptionId: string;
@@ -14,7 +14,7 @@ type HeaderProps = {
 };
 
 
-export function Header({ cart }: HeaderProps) { 
+export function Header({ cart = [] }: HeaderProps) {
     let totalQuantity = 0;
 
     cart.forEach((cartItem) =>{

@@ -6,14 +6,20 @@ import './HomePage.css'
 
 export function HomePage({ cart,loadCart }) {
     const [products, setProducts] = useState([]);
+    const [loadError, setLoadError] = useState(false);
 
     useEffect(() => {
         const getHomeData = async () => {
-        const response = await axios.get('/api/products')
+            try {
+                const response = await axios.get('/api/products');
                 setProducts(response.data);
-            };
+            } catch (error) {
+                console.error('Could not load products', error);
+                setLoadError(true);
+            }
+        };
 
-            getHomeData();
+        getHomeData();
     }, []);
 
 
@@ -26,6 +32,11 @@ export function HomePage({ cart,loadCart }) {
 
 
             <div className="home-page">
+                {loadError && (
+                    <div className="load-error" role="alert">
+                        Sorry, we couldn't load the products. Please check the backend is running, then refresh.
+                    </div>
+                )}
                 <ProductsGrid products={products} loadCart={loadCart} />
             </div>
         </>

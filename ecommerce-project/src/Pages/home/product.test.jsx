@@ -1,5 +1,5 @@
 import { it, expect, describe, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Product } from './Product';
 import axios from 'axios';
@@ -69,5 +69,20 @@ describe('product component', () => {
             }
         );
         expect(loadCart).toHaveBeenCalled();
+    });
+
+    it('saves to the cart before reloading it', async () => {
+        const calls = [];
+        // The save only finishes a moment later, like a real request.
+        axios.post.mockImplementation(() => new Promise((resolve) => {
+            setTimeout(() => { calls.push('post'); resolve({}); }, 20);
+        }));
+        const loadCart = vi.fn(async () => { calls.push('loadCart'); });
+        render(<Product product={product} loadCart={loadCart} />);
+
+        await userEvent.setup().click(screen.getByTestId('add-to-cart-button'));
+
+        await waitFor(() => expect(loadCart).toHaveBeenCalled());
+        expect(calls).toEqual(['post', 'loadCart']);
     });
 });

@@ -6,9 +6,16 @@ export function PaymentSummary({ paymentSummary, loadCart }) {
   const navigate = useNavigate();
 
   const createOrder = async () => {
-    await axios.post('/api/orders');
+    try {
+      await axios.post('/api/orders');
+    } catch (error) {
+      console.error('Could not place the order', error);
+      alert('Sorry, we could not place your order. Please try again.');
+      return;
+    }
     await loadCart();
-    navigate('./orders');
+    // Absolute path: './orders' would resolve to /checkout/orders (a 404).
+    navigate('/orders');
   };
 
   return (
