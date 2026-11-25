@@ -64,10 +64,12 @@ export function TrackingPage({ cart }: { cart: CartItem[] }) {
         );
     } else if (notFound) {
         content = (
-            <div className="tracking-not-found">
+            <div className="tracking-message">
                 We couldn't find that package.
             </div>
         );
+    } else if (!order) {
+        content = <div className="tracking-message" role="status">Loading your package…</div>;
     } else if (order && orderProduct) {
         const percent = getProgress(order.orderTimeMs, orderProduct.estimatedDeliveryTimeMs);
         const status = getStatus(percent);

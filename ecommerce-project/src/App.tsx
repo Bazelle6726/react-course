@@ -14,11 +14,14 @@ import './App.css'
 
 function App() {
   const [cart, setCart] = useState<CartItemWithProduct[]>([]);
+  // Until the first load, an empty `cart` doesn't mean the cart is empty.
+  const [isCartLoaded, setIsCartLoaded] = useState(false);
 
   const loadCart = async () => {
     try {
       const response = await axios.get<CartItemWithProduct[]>('/api/cart-items?expand=product');
       setCart(response.data);
+      setIsCartLoaded(true);
     } catch (error) {
       // Keep showing the last cart we had; pages report their own load errors.
       console.error('Could not load the cart', error);
@@ -32,7 +35,7 @@ function App() {
   return (
     <Routes>
       <Route index element={<HomePage cart={cart} loadCart={loadCart} />} />
-      <Route path="checkout" element={<CheckoutPage cart={cart} loadCart={loadCart} />} />
+      <Route path="checkout" element={<CheckoutPage cart={cart} isCartLoaded={isCartLoaded} loadCart={loadCart} />} />
       <Route path="orders" element={<OrdersPage cart={cart} loadCart={loadCart} />} />
       <Route path="tracking/:orderId/:productId" element={<TrackingPage cart={cart} />} />
       <Route path="*" element={<NotFoundPage cart={cart} />} />

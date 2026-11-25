@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router';
 import { Header } from '../../Components/Header';
 import { formatMoney } from '../../utils/money'
 import { OrderProduct } from './OrderProduct';
@@ -13,18 +14,24 @@ type OrdersPageProps = {
 };
 
 export function OrdersPage({ cart, loadCart }: OrdersPageProps) {
-    const [orders, setOrders] = useState<Order[]>([]);
+    // null until the orders arrive.
+    const [orders, setOrders] = useState<Order[] | null>(null);
     const [loadError, setLoadError] = useState(false);
 
     useEffect(() => {
+        let ignore = false;
+
         axios.get<Order[]>('/api/orders?expand=products')
             .then((response) => {
-                setOrders(response.data);
+                if (!ignore) setOrders(response.data);
             })
             .catch((error) => {
+                if (ignore) return;
                 console.error('Could not load orders', error);
                 setLoadError(true);
             });
+
+        return () => { ignore = true; };
     }, []);
 
     return (
@@ -43,8 +50,20 @@ export function OrdersPage({ cart, loadCart }: OrdersPageProps) {
                     </div>
                 )}
 
+                {!loadError && orders === null && (
+                    <div className="page-message" role="status">Loading your orders…</div>
+                )}
+
+                {orders?.length === 0 && (
+                    <div className="page-message">
+                        You haven't placed any orders yet.
+                        <br />
+                        <Link className="link-primary" to="/">Start shopping</Link>
+                    </div>
+                )}
+
                 <div className="orders-grid">
-                    {orders.map((order) => {
+                    {(orders ?? []).map((order) => {
                         return (
                             <div key={order.id} className="order-container">
                                 <div className="order-header">

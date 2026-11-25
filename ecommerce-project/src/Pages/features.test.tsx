@@ -33,7 +33,6 @@ const renderAt = (path: string, routes: ReactNode) => render(
 
 beforeEach(() => {
     vi.resetAllMocks();
-    vi.spyOn(window, 'alert').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -159,7 +158,7 @@ describe('"Added" message after Add to Cart', () => {
 
         await userEvent.setup().click(screen.getByTestId('add-to-cart-button'));
 
-        expect(window.alert).toHaveBeenCalled();
+        expect(await screen.findByRole('alert')).toHaveTextContent('could not add this to your cart');
         expect(screen.getByTestId('added-to-cart')).not.toHaveClass('is-visible');
     });
 });
@@ -200,7 +199,7 @@ describe('Checkout header item count', () => {
 
     it('shows the total quantity in the cart', async () => {
         const cart = [makeCartItem({ quantity: 2 }), makeCartItem({ product: ball, quantity: 3 })];
-        renderAt('/checkout', <Route path="checkout" element={<CheckoutPage cart={cart} loadCart={vi.fn()} />} />);
+        renderAt('/checkout', <Route path="checkout" element={<CheckoutPage cart={cart} isCartLoaded loadCart={vi.fn()} />} />);
 
         expect(screen.getByRole('link', { name: '5 items' })).toBeInTheDocument();
         await waitFor(() => expect(axiosGet).toHaveBeenCalledTimes(2));
@@ -208,7 +207,7 @@ describe('Checkout header item count', () => {
 
     it('says "1 item" for a single item', async () => {
         const cart = [makeCartItem({ quantity: 1 })];
-        renderAt('/checkout', <Route path="checkout" element={<CheckoutPage cart={cart} loadCart={vi.fn()} />} />);
+        renderAt('/checkout', <Route path="checkout" element={<CheckoutPage cart={cart} isCartLoaded loadCart={vi.fn()} />} />);
 
         expect(screen.getByRole('link', { name: '1 item' })).toBeInTheDocument();
         await waitFor(() => expect(axiosGet).toHaveBeenCalledTimes(2));
@@ -272,7 +271,7 @@ describe('Updating a quantity in checkout', () => {
         expect(within(screen.getByText(/Quantity:/)).getByText('2')).toBeInTheDocument();
     });
 
-    it('keeps the box open and alerts if saving fails', async () => {
+    it('keeps the box open and shows an error if saving fails', async () => {
         axiosPut.mockRejectedValue(new Error('boom'));
         render(<CartItemDetails cartItem={cartItem} loadCart={vi.fn()} />);
         const user = userEvent.setup();
@@ -281,7 +280,7 @@ describe('Updating a quantity in checkout', () => {
         await user.clear(screen.getByRole('spinbutton'));
         await user.type(screen.getByRole('spinbutton'), '4{Enter}');
 
-        await waitFor(() => expect(window.alert).toHaveBeenCalled());
+        expect(await screen.findByRole('alert')).toHaveTextContent('could not update the quantity');
         expect(screen.getByRole('spinbutton')).toBeInTheDocument();
     });
 });

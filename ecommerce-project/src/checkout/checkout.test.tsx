@@ -32,7 +32,6 @@ const cartItem = makeCartItem({
 
 beforeEach(() => {
     vi.resetAllMocks();
-    vi.spyOn(window, 'alert').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -66,7 +65,7 @@ describe('PaymentSummary', () => {
 
         await userEvent.setup().click(screen.getByText('Place your order'));
 
-        expect(window.alert).toHaveBeenCalled();
+        expect(await screen.findByRole('alert')).toHaveTextContent('could not place your order');
         expect(loadCart).not.toHaveBeenCalled();
         expect(screen.getByText('Place your order')).toBeInTheDocument();
     });

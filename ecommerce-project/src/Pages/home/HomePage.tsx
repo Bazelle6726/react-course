@@ -53,6 +53,9 @@ export function HomePage({ cart, loadCart }: HomePageProps) {
                         Sorry, we couldn't load the products. Please check the backend is running, then refresh.
                     </div>
                 )}
+                {!loadError && products === null && (
+                    <div className="page-message" role="status">Loading products…</div>
+                )}
                 {!loadError && search && products?.length === 0 && (
                     <div className="no-results">
                         No products match “{search}”.

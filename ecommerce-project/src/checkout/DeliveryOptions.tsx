@@ -1,6 +1,7 @@
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { formatMoney } from "../utils/money";
+import { useAction } from '../utils/useAction';
 import type { CartItem, DeliveryOption, LoadCart } from '../types';
 
 type DeliveryOptionsProps = {
@@ -10,8 +11,21 @@ type DeliveryOptionsProps = {
 };
 
 export function DeliveryOptions({ cartItem, deliveryOptions, loadCart }: DeliveryOptionsProps) {
+    const { isBusy, error, run } = useAction();
+
+    const updateDeliveryOption = (deliveryOptionId: string) => {
+        // Clicking the option that's already chosen doesn't need a request.
+        if (deliveryOptionId === cartItem.deliveryOptionId) return;
+
+        run(async () => {
+            // Wait for the save before reloading, or the old option comes back.
+            await axios.put(`/api/cart-items/${cartItem.productId}`, { deliveryOptionId });
+            await loadCart();
+        }, 'Sorry, we could not change the delivery option. Please try again.');
+    };
+
     return (
-        <div className="delivery-options">
+        <div className={`delivery-options${isBusy ? ' is-busy' : ''}`} aria-busy={isBusy}>
             <div className="delivery-options-title">
                 Choose a delivery option:
             </div>
@@ -21,21 +35,9 @@ export function DeliveryOptions({ cartItem, deliveryOptions, loadCart }: Deliver
                 if (deliveryOption.priceCents > 0) {
                     priceString = `${formatMoney(deliveryOption.priceCents)} - Shipping`;
                 }
-                const updateDeliveryOption = async () => {
-                    try {
-                        // Wait for the save before reloading, or the old option comes back.
-                        await axios.put(`/api/cart-items/${cartItem.productId}`, {
-                            deliveryOptionId: deliveryOption.id
-                        });
-                        await loadCart();
-                    } catch (error) {
-                        console.error('Could not update the delivery option', error);
-                        alert('Sorry, we could not change the delivery option. Please try again.');
-                    }
-                };
                 return (
                     <div key={deliveryOption.id} className="delivery-option"
-                    onClick={updateDeliveryOption}>
+                    onClick={() => updateDeliveryOption(deliveryOption.id)}>
                         <input type="radio" checked={deliveryOption.id === cartItem.deliveryOptionId}
                         onChange={() => {}}
                             className="delivery-option-input"
@@ -51,6 +53,7 @@ export function DeliveryOptions({ cartItem, deliveryOptions, loadCart }: Deliver
                     </div>
                 );
             })}
+            {error && <div className="action-error" role="alert">{error}</div>}
         </div>
     )
 }

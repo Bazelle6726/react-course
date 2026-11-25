@@ -113,3 +113,35 @@ input:focus {
   color: rgb(132, 32, 41);
   font-size: 15px;
 }
+
+/* Buttons are disabled while their request is running. */
+.button-primary:disabled,
+.button-secondary:disabled,
+button.link-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.button-primary:disabled:hover {
+  background-color: rgb(25, 135, 84);
+}
+
+/* Shown next to a button when its request fails. */
+.action-error {
+  margin-top: 6px;
+  font-size: 14px;
+  color: rgb(176, 42, 55);
+}
+
+/* "Loading…" and empty-page messages. */
+.page-message {
+  margin: 40px 20px;
+  font-size: 18px;
+  color: rgb(120, 120, 120);
+}
+
+.page-message a {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 16px;
+}

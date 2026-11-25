@@ -228,3 +228,18 @@
   font-size: 14px;
   color: rgb(176, 42, 55);
 }
+
+/* While a new delivery option is being saved. */
+.checkout-page .delivery-options.is-busy {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.checkout-page .delivery-options.is-busy .delivery-option {
+  pointer-events: none;
+}
+
+.checkout-page .place-order-button + .action-error {
+  margin-top: -10px;
+  margin-bottom: 12px;
+}

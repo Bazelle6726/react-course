@@ -12,36 +12,84 @@ import './checkoutPage.css'
 
 type CheckoutPageProps = {
     cart: CartItemWithProduct[];
+    /** False until the cart has been fetched for the first time. */
+    isCartLoaded: boolean;
     loadCart: LoadCart;
 };
 
-export function CheckoutPage({ cart, loadCart }: CheckoutPageProps) {
-    const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[]>([]);
+export function CheckoutPage({ cart, isCartLoaded, loadCart }: CheckoutPageProps) {
+    // null until they arrive.
+    const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[] | null>(null);
     const [paymentSummary, setPaymentSummary] = useState<PaymentSummaryType | null>(null);
-    const [loadError, setLoadError] = useState(false);
+    const [optionsError, setOptionsError] = useState(false);
+    const [summaryError, setSummaryError] = useState(false);
 
+    // The delivery options don't depend on the cart, so fetch them once.
     useEffect(() => {
-        const fetchCheckoutData = async () => {
-            try {
-                const optionsResponse = await axios.get<DeliveryOption[]>(
-                    '/api/delivery-options?expand=estimatedDeliveryTime'
-                );
-                setDeliveryOptions(optionsResponse.data);
+        let ignore = false;
 
-                const summaryResponse = await axios.get<PaymentSummaryType>('/api/payment-summary');
-                setPaymentSummary(summaryResponse.data);
-                setLoadError(false);
-            } catch (error) {
-                console.error('Could not load checkout data', error);
-                setLoadError(true);
-            }
-        };
+        axios.get<DeliveryOption[]>('/api/delivery-options?expand=estimatedDeliveryTime')
+            .then((response) => {
+                if (!ignore) setDeliveryOptions(response.data);
+            })
+            .catch((error) => {
+                if (ignore) return;
+                console.error('Could not load the delivery options', error);
+                setOptionsError(true);
+            });
 
-        fetchCheckoutData();
+        return () => { ignore = true; };
+    }, []);
+
+    // The totals change whenever the cart does.
+    useEffect(() => {
+        let ignore = false;
+
+        axios.get<PaymentSummaryType>('/api/payment-summary')
+            .then((response) => {
+                if (ignore) return;
+                setPaymentSummary(response.data);
+                setSummaryError(false);
+            })
+            .catch((error) => {
+                if (ignore) return;
+                console.error('Could not load the payment summary', error);
+                setSummaryError(true);
+            });
+
+        // If the cart changes again before this answer arrives, drop it:
+        // the newer request has the right totals.
+        return () => { ignore = true; };
     }, [cart]);
 
-
     const totalQuantity = cart.reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+
+    let content;
+    if (optionsError || summaryError) {
+        content = (
+            <div className="load-error" role="alert">
+                Sorry, we couldn't load your checkout details. Please check the backend is running, then refresh.
+            </div>
+        );
+    } else if (!isCartLoaded || deliveryOptions === null) {
+        content = <div className="page-message" role="status">Loading your cart…</div>;
+    } else if (cart.length === 0) {
+        content = (
+            <div className="page-message empty-cart-message">
+                Your cart is empty.
+                <br />
+                <Link className="link-primary" to="/">View products</Link>
+            </div>
+        );
+    } else {
+        content = (
+            <div className="checkout-grid">
+                <OrderSummary cart={cart} deliveryOptions={deliveryOptions} loadCart={loadCart} />
+
+                <PaymentSummary paymentSummary={paymentSummary} loadCart={loadCart} />
+            </div>
+        );
+    }
 
     return (
         <>
@@ -72,18 +120,7 @@ export function CheckoutPage({ cart, loadCart }: CheckoutPageProps) {
             <div className="checkout-page">
                 <div className="page-title">Review your order</div>
 
-                {loadError && (
-                    <div className="load-error" role="alert">
-                        Sorry, we couldn't load your checkout details. Please check the backend is running, then refresh.
-                    </div>
-                )}
-
-                <div className="checkout-grid">
-                    <OrderSummary cart={cart} deliveryOptions={deliveryOptions} loadCart={loadCart} />
-
-
-                    <PaymentSummary paymentSummary={paymentSummary} loadCart={loadCart} />
-                </div>
+                {content}
             </div>
         </>
     );
