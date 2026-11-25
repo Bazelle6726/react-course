@@ -2,10 +2,10 @@ import { it, expect, describe, vi, beforeEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { axiosGet, mockGet, renderWithClient } from '../test-utils';
-import { TrackingPage } from './TrackingPage';
-import { NotFoundPage } from './NotFoundPage';
+import { TrackingPage } from './tracking/TrackingPage';
+import { NotFoundPage } from './not-found/NotFoundPage';
 import { HomePage } from './home/HomePage';
-import { Header } from '../Components/Header';
+import { Header } from '../components/Header';
 
 vi.mock('axios');
 

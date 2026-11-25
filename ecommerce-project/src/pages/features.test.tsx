@@ -3,13 +3,13 @@ import { screen, within, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router';
 import type { ReactNode } from 'react';
-import { TrackingPage } from './TrackingPage';
+import { TrackingPage } from './tracking/TrackingPage';
 import { HomePage } from './home/HomePage';
 import { Product } from './home/Product';
 import { OrdersPage } from './orders/OrdersPage';
-import { Header } from '../Components/Header';
-import { CheckoutPage } from '../checkout/CheckoutPage';
-import { CartItemDetails } from '../checkout/CartItemDetails';
+import { Header } from '../components/Header';
+import { CheckoutPage } from './checkout/CheckoutPage';
+import { CartItemDetails } from './checkout/CartItemDetails';
 import {
     axiosGet, axiosPost, axiosPut, getCalls, makeCartItem, makeProduct, mockGet, renderWithClient,
 } from '../test-utils';

@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { CartItemDetails } from './CartItemDetails';
 import { DeliveryOptions } from './DeliveryOptions';
-import type { CartItemWithProduct, DeliveryOption } from '../types';
+import type { CartItemWithProduct, DeliveryOption } from '../../types';
 
 type OrderSummaryProps = {
   cart: CartItemWithProduct[];

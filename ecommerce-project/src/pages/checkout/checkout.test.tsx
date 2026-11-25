@@ -6,8 +6,8 @@ import dayjs from 'dayjs';
 import { PaymentSummary } from './PaymentSummary';
 import { DeliveryOptions } from './DeliveryOptions';
 import { OrderSummary } from './OrderSummary';
-import { axiosPost, axiosPut, makeCartItem, makeProduct, renderWithClient, resolveLater } from '../test-utils';
-import type { DeliveryOption, PaymentSummary as PaymentSummaryType } from '../types';
+import { axiosPost, axiosPut, makeCartItem, makeProduct, renderWithClient, resolveLater } from '../../test-utils';
+import type { DeliveryOption, PaymentSummary as PaymentSummaryType } from '../../types';
 
 vi.mock('axios');
 

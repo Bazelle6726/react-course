@@ -1,19 +1,19 @@
 import dayjs from 'dayjs';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
-import { Header } from '../../Components/Header';
+import { Header } from '../../components/Header';
+import { PageMeta } from '../../components/PageMeta';
 import { ordersQuery } from '../../api';
-import { formatMoney } from '../../utils/money'
+import { formatMoney } from '../../utils/money';
 import { OrderProduct } from './OrderProduct';
-import './ordersPage.css';
+import './OrdersPage.css';
 
 export function OrdersPage() {
     const { data: orders, isPending, isError } = useQuery(ordersQuery);
 
     return (
         <>
-            <title>Orders</title>
-            <link rel="icon" type="image/png" href="/orders-favicon.png" />
+            <PageMeta title="Orders" favicon="orders" />
 
             <Header />
 

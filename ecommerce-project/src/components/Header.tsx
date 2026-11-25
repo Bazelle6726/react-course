@@ -6,7 +6,7 @@ import CartIcon from '../assets/images/icons/cart-icon.png';
 import SearchIcon from '../assets/images/icons/search-icon.png';
 import LogoWhite from '../assets/images/icons/logo-white.png';
 import MobileLogoWhite from '../assets/images/icons/mobile-logo-white.png';
-import './header.css';
+import './Header.css';
 
 export function Header() {
     const navigate = useNavigate();
@@ -29,7 +29,7 @@ export function Header() {
                     <img className="logo"
                         src={LogoWhite} />
                     <img className="mobile-logo"
-                        src= {MobileLogoWhite} />
+                        src={MobileLogoWhite} />
                 </NavLink>
             </div>
 

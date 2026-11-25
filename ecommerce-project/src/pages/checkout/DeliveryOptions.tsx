@@ -1,10 +1,10 @@
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { useQueryClient } from '@tanstack/react-query';
-import { refreshCart } from '../api';
-import { formatMoney } from "../utils/money";
-import { useSingleMutation } from '../utils/useSingleMutation';
-import type { CartItem, DeliveryOption } from '../types';
+import { refreshCart } from '../../api';
+import { formatMoney } from '../../utils/money';
+import { useSingleMutation } from '../../utils/useSingleMutation';
+import type { CartItem, DeliveryOption } from '../../types';
 
 type DeliveryOptionsProps = {
     cartItem: CartItem;
@@ -41,9 +41,9 @@ export function DeliveryOptions({ cartItem, deliveryOptions }: DeliveryOptionsPr
                 }
                 return (
                     <div key={deliveryOption.id} className="delivery-option"
-                    onClick={() => updateDeliveryOption(deliveryOption.id)}>
+                        onClick={() => updateDeliveryOption(deliveryOption.id)}>
                         <input type="radio" checked={deliveryOption.id === cartItem.deliveryOptionId}
-                        onChange={() => {}}
+                            onChange={() => {}}
                             className="delivery-option-input"
                             name={`delivery-option-${cartItem.productId}`} />
                         <div>

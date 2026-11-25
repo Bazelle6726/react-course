@@ -1,11 +1,11 @@
-import { Header } from '../Components/Header';
-import './notFoundPage.css';
+import { Header } from '../../components/Header';
+import { PageMeta } from '../../components/PageMeta';
+import './NotFoundPage.css';
 
 export function NotFoundPage() {
     return (
         <>
-            <title>404 Page Not Found</title>
-            <link rel="icon" type="image/png" href="/home-favicon.png"/>
+            <PageMeta title="404 Page Not Found" favicon="home" />
             <Header />
 
             <div className="not-found-message">

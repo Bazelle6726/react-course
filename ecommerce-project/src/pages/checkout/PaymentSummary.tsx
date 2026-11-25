@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { refreshCart } from '../api';
-import { formatMoney } from '../utils/money';
-import { useSingleMutation } from '../utils/useSingleMutation';
-import type { PaymentSummary as PaymentSummaryType } from '../types';
+import { refreshCart } from '../../api';
+import { formatMoney } from '../../utils/money';
+import { useSingleMutation } from '../../utils/useSingleMutation';
+import type { PaymentSummary as PaymentSummaryType } from '../../types';
 
 export function PaymentSummary({ paymentSummary }: { paymentSummary: PaymentSummaryType | null }) {
   const navigate = useNavigate();

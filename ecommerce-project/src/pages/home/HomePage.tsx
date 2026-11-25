@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
-import { Header } from '../../Components/Header';
+import { Header } from '../../components/Header';
+import { PageMeta } from '../../components/PageMeta';
 import { ProductsGrid } from './ProductsGrid';
 import { productsQuery } from '../../api';
-import './HomePage.css'
+import './HomePage.css';
 
 export function HomePage() {
     const [searchParams] = useSearchParams();
@@ -12,8 +13,7 @@ export function HomePage() {
 
     return (
         <>
-            <title>{search ? `Search: ${search}` : 'Ecommerce Project'}</title>
-            <link rel="icon" type="image/png" href="/home-favicon.png" />
+            <PageMeta title={search ? `Search: ${search}` : 'Ecommerce Project'} favicon="home" />
             <Header />
 
             <div className="home-page">

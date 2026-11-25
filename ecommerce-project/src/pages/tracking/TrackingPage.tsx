@@ -1,9 +1,10 @@
 import dayjs from 'dayjs';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
-import { Header } from '../Components/Header';
-import { orderQuery } from '../api';
-import './trackingPage.css';
+import { Header } from '../../components/Header';
+import { PageMeta } from '../../components/PageMeta';
+import { orderQuery } from '../../api';
+import './TrackingPage.css';
 
 type Status = 'Preparing' | 'Shipped' | 'Delivered';
 
@@ -93,8 +94,7 @@ export function TrackingPage() {
 
     return (
         <>
-            <title>Tracking</title>
-            <link rel="icon" type="image/png" href="/tracking-favicon.png" />
+            <PageMeta title="Tracking" favicon="tracking" />
 
             <Header />
 

@@ -2,10 +2,10 @@ import axios from 'axios';
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { refreshCart } from '../api';
-import { formatMoney } from '../utils/money';
-import { useSingleMutation } from '../utils/useSingleMutation';
-import type { CartItemWithProduct } from '../types';
+import { refreshCart } from '../../api';
+import { formatMoney } from '../../utils/money';
+import { useSingleMutation } from '../../utils/useSingleMutation';
+import type { CartItemWithProduct } from '../../types';
 
 const MAX_QUANTITY = 99;
 

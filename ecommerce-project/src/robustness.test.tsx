@@ -6,16 +6,16 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import type { ReactNode } from 'react';
 import { refreshCart } from './api';
-import { Header } from './Components/Header';
-import { PaymentSummary } from './checkout/PaymentSummary';
-import { CartItemDetails } from './checkout/CartItemDetails';
-import { DeliveryOptions } from './checkout/DeliveryOptions';
-import { CheckoutPage } from './checkout/CheckoutPage';
-import { Product } from './Pages/home/Product';
-import { HomePage } from './Pages/home/HomePage';
-import { OrdersPage } from './Pages/orders/OrdersPage';
-import { OrderProduct } from './Pages/orders/OrderProduct';
-import { TrackingPage } from './Pages/TrackingPage';
+import { Header } from './components/Header';
+import { PaymentSummary } from './pages/checkout/PaymentSummary';
+import { CartItemDetails } from './pages/checkout/CartItemDetails';
+import { DeliveryOptions } from './pages/checkout/DeliveryOptions';
+import { CheckoutPage } from './pages/checkout/CheckoutPage';
+import { Product } from './pages/home/Product';
+import { HomePage } from './pages/home/HomePage';
+import { OrdersPage } from './pages/orders/OrdersPage';
+import { OrderProduct } from './pages/orders/OrderProduct';
+import { TrackingPage } from './pages/tracking/TrackingPage';
 import {
     axiosDelete, axiosGet, axiosPost, axiosPut, getCalls, makeCartItem, makeProduct, mockGet, renderWithClient,
 } from './test-utils';
