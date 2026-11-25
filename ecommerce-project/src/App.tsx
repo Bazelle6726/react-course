@@ -5,6 +5,7 @@ import { CheckoutPage } from './pages/checkout/CheckoutPage';
 import { OrdersPage } from './pages/orders/OrdersPage';
 import { TrackingPage } from './pages/tracking/TrackingPage';
 import { NotFoundPage } from './pages/not-found/NotFoundPage';
+import { ProductPage } from './pages/product/ProductPage';
 
 // Pages load their own data (see api.ts), so nothing needs passing down.
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <ErrorBoundary key={location.pathname}>
             <Routes>
                 <Route index element={<HomePage />} />
+                <Route path="products/:productId" element={<ProductPage />} />
                 <Route path="checkout" element={<CheckoutPage />} />
                 <Route path="orders" element={<OrdersPage />} />
                 <Route path="tracking/:orderId/:productId" element={<TrackingPage />} />

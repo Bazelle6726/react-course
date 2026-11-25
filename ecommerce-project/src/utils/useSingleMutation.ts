@@ -9,11 +9,11 @@ import type { UseMutationOptions } from '@tanstack/react-query';
  * `isPending` disables the button, but only from the next render, so a very
  * fast double-click could otherwise send the same request twice (two orders).
  *
- * `onSuccess` passed to `mutate` runs after the options' own `onSuccess` has
- * finished, e.g. after the cart has reloaded.
+ * `onSuccess` passed to `mutate` runs after the options' own `onSuccess` and
+ * `onSettled` have finished, e.g. after the cart has reloaded.
  */
-export function useSingleMutation<TVariables = void>(
-    options: UseMutationOptions<unknown, Error, TVariables>
+export function useSingleMutation<TVariables = void, TContext = unknown>(
+    options: UseMutationOptions<unknown, Error, TVariables, TContext>
 ) {
     const mutation = useMutation(options);
     const running = useRef(false);

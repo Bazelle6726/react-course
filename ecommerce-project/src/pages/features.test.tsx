@@ -147,7 +147,7 @@ describe('"Added" message after Add to Cart', () => {
     it('appears after adding and hides again after 2 seconds', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true });
         axiosPost.mockResolvedValue({});
-        renderWithClient(<Product product={socks} />);
+        renderWithClient(<MemoryRouter><Product product={socks} /></MemoryRouter>);
         const added = screen.getByTestId('added-to-cart');
         expect(added).not.toHaveClass('is-visible');
 
@@ -160,7 +160,7 @@ describe('"Added" message after Add to Cart', () => {
 
     it('does not appear when adding fails', async () => {
         axiosPost.mockRejectedValue(new Error('boom'));
-        renderWithClient(<Product product={socks} />);
+        renderWithClient(<MemoryRouter><Product product={socks} /></MemoryRouter>);
 
         await userEvent.setup().click(screen.getByTestId('add-to-cart-button'));
 
@@ -279,7 +279,7 @@ describe('Updating a quantity in checkout', () => {
         expect(within(screen.getByText(/Quantity:/)).getByText('2')).toBeInTheDocument();
     });
 
-    it('keeps the box open and shows an error if saving fails', async () => {
+    it('shows the old quantity and an error if saving fails', async () => {
         axiosPut.mockRejectedValue(new Error('boom'));
         renderWithClient(<CartItemDetails cartItem={cartItem} />);
         const user = userEvent.setup();
@@ -289,6 +289,6 @@ describe('Updating a quantity in checkout', () => {
         await user.type(screen.getByRole('spinbutton'), '4{Enter}');
 
         expect(await screen.findByRole('alert')).toHaveTextContent('could not update the quantity');
-        expect(screen.getByRole('spinbutton')).toBeInTheDocument();
+        expect(within(screen.getByText(/Quantity:/)).getByText('2')).toBeInTheDocument();
     });
 });

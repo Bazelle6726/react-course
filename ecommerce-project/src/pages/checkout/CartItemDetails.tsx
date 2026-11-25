@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { refreshCart } from '../../api';
+import { cartChange, refreshCart } from '../../api';
 import { formatMoney } from '../../utils/money';
 import { useSingleMutation } from '../../utils/useSingleMutation';
 import type { CartItemWithProduct } from '../../types';
@@ -15,10 +15,15 @@ export function CartItemDetails({ cartItem }: { cartItem: CartItemWithProduct })
     const [quantityText, setQuantityText] = useState(String(cartItem.quantity));
     const [quantityError, setQuantityError] = useState('');
 
-    const saveMutation = useSingleMutation<number>({
-        mutationFn: (quantity) => axios.put(`/api/cart-items/${cartItem.productId}`, { quantity }),
-        onSuccess: () => refreshCart(queryClient),
-    });
+    // The new quantity shows straight away, and goes back if saving fails.
+    const saveMutation = useSingleMutation(cartChange(
+        queryClient,
+        (quantity: number) => axios.put(`/api/cart-items/${cartItem.productId}`, { quantity }),
+        (cart, quantity) => cart.map((item) =>
+            item.productId === cartItem.productId ? { ...item, quantity } : item),
+    ));
+    // Not instant: if the item vanished and then the delete failed, it would
+    // come back with nowhere to show the error.
     const deleteMutation = useSingleMutation({
         mutationFn: () => axios.delete(`/api/cart-items/${cartItem.productId}`),
         onSuccess: () => refreshCart(queryClient),
@@ -54,7 +59,10 @@ export function CartItemDetails({ cartItem }: { cartItem: CartItemWithProduct })
             cancelEditing();
             return;
         }
-        saveMutation.mutate(quantity, () => setIsEditing(false));
+        // Close the box now; the new quantity is already showing. If saving
+        // fails, the old quantity comes back with an error under it.
+        setIsEditing(false);
+        saveMutation.mutate(quantity);
     };
 
     const handleQuantityKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {

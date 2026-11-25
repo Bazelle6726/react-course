@@ -170,3 +170,46 @@
 .home-page .added-to-cart.is-visible {
   opacity: 1;
 }
+
+/* The product's image and name link to its page. */
+.home-page a.product-image-container {
+  text-decoration: none;
+}
+
+.home-page a.product-name {
+  color: inherit;
+  text-decoration: none;
+}
+
+.home-page a.product-name:hover {
+  color: rgb(25, 135, 84);
+  text-decoration: underline;
+}
+
+/* Product count, sort order and rating filter above the grid. */
+.home-page .product-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  padding: 14px 25px;
+  border-bottom: 1px solid rgb(240, 240, 240);
+}
+
+.home-page .product-count {
+  margin-right: auto;
+  color: rgb(90, 90, 90);
+}
+
+.home-page .product-toolbar label {
+  font-size: 15px;
+}
+
+/* A button that looks like a link. */
+.home-page .link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  text-decoration: underline;
+}

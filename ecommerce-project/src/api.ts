@@ -47,6 +47,38 @@ export const orderQuery = (orderId: string) => queryOptions({
     queryFn: async () => (await axios.get<Order>(`/api/orders/${orderId}?expand=products`)).data,
 });
 
+type Cart = CartItemWithProduct[];
+
+/**
+ * Mutation options for a request that changes the cart. The change shows
+ * straight away (`change` edits the cached cart), is undone if the request
+ * fails, and the cart reloads afterwards either way so it matches the backend
+ * and the totals update.
+ *
+ *     useSingleMutation(cartChange(queryClient,
+ *         (quantity: number) => axios.put(url, { quantity }),
+ *         (cart, quantity) => cart.map(...)));
+ */
+export function cartChange<TVariables>(
+    queryClient: QueryClient,
+    request: (variables: TVariables) => Promise<unknown>,
+    change: (cart: Cart, variables: TVariables) => Cart,
+) {
+    return {
+        mutationFn: request,
+        onMutate: async (variables: TVariables) => {
+            // Stop a reload that's already on its way from overwriting the change.
+            await queryClient.cancelQueries({ queryKey: cartQuery.queryKey, exact: true });
+            const previous = queryClient.getQueryData(cartQuery.queryKey);
+            queryClient.setQueryData(cartQuery.queryKey, (cart) => cart && change(cart, variables));
+            // Handed to onError, to put the cart back.
+            return () => queryClient.setQueryData(cartQuery.queryKey, previous);
+        },
+        onError: (_error: Error, _variables: TVariables, undo?: () => void) => undo?.(),
+        onSettled: () => refreshCart(queryClient),
+    };
+}
+
 /**
  * Marks the cart (and its totals) as out of date, so every component showing
  * it fetches it again. Resolves once the new cart has arrived.

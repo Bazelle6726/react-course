@@ -1,7 +1,7 @@
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { useQueryClient } from '@tanstack/react-query';
-import { refreshCart } from '../../api';
+import { cartChange } from '../../api';
 import { formatMoney } from '../../utils/money';
 import { useSingleMutation } from '../../utils/useSingleMutation';
 import type { CartItem, DeliveryOption } from '../../types';
@@ -14,11 +14,14 @@ type DeliveryOptionsProps = {
 export function DeliveryOptions({ cartItem, deliveryOptions }: DeliveryOptionsProps) {
     const queryClient = useQueryClient();
 
-    const changeOption = useSingleMutation<string>({
-        mutationFn: (deliveryOptionId) =>
+    // The new option is ticked (and its date shown) straight away.
+    const changeOption = useSingleMutation(cartChange(
+        queryClient,
+        (deliveryOptionId: string) =>
             axios.put(`/api/cart-items/${cartItem.productId}`, { deliveryOptionId }),
-        onSuccess: () => refreshCart(queryClient),
-    });
+        (cart, deliveryOptionId) => cart.map((item) =>
+            item.productId === cartItem.productId ? { ...item, deliveryOptionId } : item),
+    ));
 
     const updateDeliveryOption = (deliveryOptionId: string) => {
         // Clicking the option that's already chosen doesn't need a request.

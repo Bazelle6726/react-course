@@ -1,6 +1,7 @@
 import { it, expect, describe, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 import { Product } from './Product';
 import { axiosPost, renderWithClient, resolveLater } from '../../test-utils';
 import type { Product as ProductType } from '../../types';
@@ -27,7 +28,7 @@ describe('product component', () => {
     });
 
     it('displays the product details correctly', () => {
-        renderWithClient(<Product product={product} />);
+        renderWithClient(<MemoryRouter><Product product={product} /></MemoryRouter>);
 
         expect(
             screen.getByText('Black and Gray Athletic Cotton Socks - 6 Pairs')
@@ -52,7 +53,7 @@ describe('product component', () => {
 
     it('adds a product to the cart', async () => {
         axiosPost.mockResolvedValue({});
-        const { queryClient } = renderWithClient(<Product product={product} />);
+        const { queryClient } = renderWithClient(<MemoryRouter><Product product={product} /></MemoryRouter>);
         const refresh = vi.spyOn(queryClient, 'invalidateQueries');
 
         const user = userEvent.setup();
@@ -73,7 +74,7 @@ describe('product component', () => {
         const calls: string[] = [];
         // The save only finishes a moment later, like a real request.
         axiosPost.mockImplementation(() => resolveLater(calls, 'post'));
-        const { queryClient } = renderWithClient(<Product product={product} />);
+        const { queryClient } = renderWithClient(<MemoryRouter><Product product={product} /></MemoryRouter>);
         vi.spyOn(queryClient, 'invalidateQueries').mockImplementation(async () => { calls.push('refresh cart'); });
 
         await userEvent.setup().click(screen.getByTestId('add-to-cart-button'));

@@ -62,7 +62,7 @@ describe('a double-click only sends one request', () => {
 
     it('Add to Cart on the home page', async () => {
         axiosPost.mockImplementation(never);
-        renderWithClient(<Product product={socks} />);
+        renderWithClient(inRouter(<Product product={socks} />));
 
         await userEvent.setup().dblClick(screen.getByTestId('add-to-cart-button'));
 
