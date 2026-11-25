@@ -7,6 +7,15 @@
   border-radius: 10px;
   font-size: 15px;
   cursor: pointer;
+
+  /* Wide enough for "Sending…", so the input doesn't jump while waiting. */
+  min-width: 112px;
+  flex-shrink: 0;
+}
+
+.send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .chat-input {
@@ -16,9 +25,11 @@
   font-size:15px;
 
   flex-grow: 1;
+  /* Let the input shrink on narrow screens instead of pushing Send off the edge. */
+  min-width: 0;
 }
 
 .chat-input-container {
   display: flex;
-
+  margin-bottom: 10px;
 }
