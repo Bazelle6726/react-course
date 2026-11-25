@@ -1,9 +1,15 @@
 import axios from 'axios';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatMoney } from '../../utils/money';
+
+const ADDED_MESSAGE_MS = 2000;
 
 export function Product({ product, loadCart }) {
     const [quantity, setQuantity] = useState(1);
+    const [showAdded, setShowAdded] = useState(false);
+    const hideTimer = useRef(null);
+
+    useEffect(() => () => clearTimeout(hideTimer.current), []);
 
     const addToCart = async () => {
         try {
@@ -13,6 +19,11 @@ export function Product({ product, loadCart }) {
                 quantity
             });
             await loadCart();
+
+            // Show "Added" for a moment; adding again restarts the timer.
+            setShowAdded(true);
+            clearTimeout(hideTimer.current);
+            hideTimer.current = setTimeout(() => setShowAdded(false), ADDED_MESSAGE_MS);
         } catch (error) {
             console.error('Could not add to cart', error);
             alert('Sorry, we could not add this to your cart. Please try again.');
@@ -66,8 +77,9 @@ export function Product({ product, loadCart }) {
 
             <div className="product-spacer"></div>
 
-            <div className="added-to-cart">
-                <img src="images/icons/checkmark.png" />
+            <div className={`added-to-cart${showAdded ? ' is-visible' : ''}`}
+                data-testid="added-to-cart" aria-hidden={!showAdded}>
+                <img src="images/icons/checkmark.png" alt="" />
                 Added
             </div>
 

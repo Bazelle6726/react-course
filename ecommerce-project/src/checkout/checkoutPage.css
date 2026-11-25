@@ -209,3 +209,22 @@
   margin-top: 20px;
   margin-bottom: 19px;
 }
+/* Update / Save / Delete are buttons (keyboard-friendly) styled as text links. */
+.checkout-page .product-quantity button.link-primary {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+}
+
+.checkout-page .quantity-textbox {
+  width: 50px;
+  padding: 2px 4px;
+  font-size: 15px;
+}
+
+.checkout-page .quantity-error {
+  margin-top: 6px;
+  font-size: 14px;
+  color: rgb(176, 42, 55);
+}

@@ -1,13 +1,105 @@
-import { Header } from '../Components/Header'
-import { Link } from 'react-router'
-import './trackingPage.css'
+import axios from 'axios';
+import dayjs from 'dayjs';
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router';
+import { Header } from '../Components/Header';
+import './trackingPage.css';
 
-// Still static placeholder content: wiring it to a real order is a later step.
+// Where a package is between the order being placed and its delivery date.
+function getProgress(orderTimeMs, deliveryTimeMs) {
+    const total = deliveryTimeMs - orderTimeMs;
+    const elapsed = Date.now() - orderTimeMs;
+    const percent = total > 0 ? (elapsed / total) * 100 : 100;
+    return Math.min(Math.max(percent, 0), 100);
+}
+
+function getStatus(percent) {
+    if (percent >= 100) return 'Delivered';
+    if (percent >= 33) return 'Shipped';
+    return 'Preparing';
+}
+
 export function TrackingPage({ cart }) {
+    const { orderId, productId } = useParams();
+    const [order, setOrder] = useState(null);
+    const [loadError, setLoadError] = useState(null);
+
+    useEffect(() => {
+        let ignore = false;
+
+        axios.get(`/api/orders/${orderId}?expand=products`)
+            .then((response) => {
+                if (!ignore) setOrder(response.data);
+            })
+            .catch((error) => {
+                if (ignore) return;
+                console.error('Could not load the order', error);
+                setLoadError(error.response?.status === 404 ? 'not-found' : 'network');
+            });
+
+        return () => { ignore = true; };
+    }, [orderId]);
+
+    const orderProduct = order?.products.find((item) => item.productId === productId);
+    const notFound = loadError === 'not-found' || (order && !orderProduct);
+
+    let content = null;
+    if (loadError === 'network') {
+        content = (
+            <div className="load-error" role="alert">
+                Sorry, we couldn't load this package. Please check the backend is running, then refresh.
+            </div>
+        );
+    } else if (notFound) {
+        content = (
+            <div className="tracking-not-found">
+                We couldn't find that package.
+            </div>
+        );
+    } else if (orderProduct) {
+        const percent = getProgress(order.orderTimeMs, orderProduct.estimatedDeliveryTimeMs);
+        const status = getStatus(percent);
+        const deliveryDate = dayjs(orderProduct.estimatedDeliveryTimeMs).format('dddd, MMMM D');
+
+        content = (
+            <>
+                <div className="delivery-date">
+                    {status === 'Delivered' ? `Delivered on ${deliveryDate}` : `Arriving on ${deliveryDate}`}
+                </div>
+
+                <div className="product-info">
+                    {orderProduct.product.name}
+                </div>
+
+                <div className="product-info">
+                    Quantity: {orderProduct.quantity}
+                </div>
+
+                <img className="product-image" src={orderProduct.product.image} alt={orderProduct.product.name} />
+
+                <div className="progress-labels-container">
+                    {['Preparing', 'Shipped', 'Delivered'].map((label) => (
+                        <div key={label}
+                            className={`progress-label${label === status ? ' current-status' : ''}`}>
+                            {label}
+                        </div>
+                    ))}
+                </div>
+
+                <div className="progress-bar-container"
+                    role="progressbar" aria-label="Delivery progress"
+                    aria-valuenow={Math.round(percent)} aria-valuemin={0} aria-valuemax={100}>
+                    {/* Always show a sliver so a new order doesn't look like an empty bar. */}
+                    <div className="progress-bar" style={{ width: `${Math.max(percent, 5)}%` }}></div>
+                </div>
+            </>
+        );
+    }
+
     return (
         <>
             <title>Tracking</title>
-            <link rel="icon" type="image/svg+xml" href="home-favicon.png"/>
+            <link rel="icon" type="image/png" href="/tracking-favicon.png" />
 
             <Header cart={cart} />
 
@@ -17,35 +109,7 @@ export function TrackingPage({ cart }) {
                         View all orders
                     </Link>
 
-                    <div className="delivery-date">
-                        Arriving on Monday, June 13
-                    </div>
-
-                    <div className="product-info">
-                        Black and Gray Athletic Cotton Socks - 6 Pairs
-                    </div>
-
-                    <div className="product-info">
-                        Quantity: 1
-                    </div>
-
-                    <img className="product-image" src="images/products/athletic-cotton-socks-6-pairs.jpg" />
-
-                    <div className="progress-labels-container">
-                        <div className="progress-label">
-                            Preparing
-                        </div>
-                        <div className="progress-label current-status">
-                            Shipped
-                        </div>
-                        <div className="progress-label">
-                            Delivered
-                        </div>
-                    </div>
-
-                    <div className="progress-bar-container">
-                        <div className="progress-bar"></div>
-                    </div>
+                    {content}
                 </div>
             </div>
         </>

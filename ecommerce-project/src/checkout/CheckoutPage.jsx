@@ -35,10 +35,12 @@ export function CheckoutPage({ cart, loadCart }) {
     }, [cart]);
 
 
+    const totalQuantity = cart.reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+
     return (
         <>
             <title>Checkout</title>
-            <link rel="icon" type="image/svg+xml" href="checkout-favicon.png" />
+            <link rel="icon" type="image/png" href="/cart-favicon.png" />
 
 
             <div className="checkout-header">
@@ -52,7 +54,7 @@ export function CheckoutPage({ cart, loadCart }) {
 
                     <div className="checkout-header-middle-section">
                         Checkout (<Link className="return-to-home-link"
-                            to="/">3 items</Link>)
+                            to="/">{totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}</Link>)
                     </div>
 
                     <div className="checkout-header-right-section">

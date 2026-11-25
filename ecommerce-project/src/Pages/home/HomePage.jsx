@@ -1,35 +1,44 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { Header } from '../../Components/Header';
 import { ProductsGrid } from './ProductsGrid';
 import './HomePage.css'
 
-export function HomePage({ cart,loadCart }) {
-    const [products, setProducts] = useState([]);
+export function HomePage({ cart, loadCart }) {
+    const [searchParams] = useSearchParams();
+    const search = searchParams.get('search') ?? '';
+    const [products, setProducts] = useState(null);
     const [loadError, setLoadError] = useState(false);
 
     useEffect(() => {
+        let ignore = false;
+
         const getHomeData = async () => {
             try {
-                const response = await axios.get('/api/products');
-                setProducts(response.data);
+                const response = search
+                    ? await axios.get('/api/products', { params: { search } })
+                    : await axios.get('/api/products');
+                if (!ignore) {
+                    setProducts(response.data);
+                    setLoadError(false);
+                }
             } catch (error) {
                 console.error('Could not load products', error);
-                setLoadError(true);
+                if (!ignore) setLoadError(true);
             }
         };
 
         getHomeData();
-    }, []);
-
+        // Ignore a slow earlier search that finishes after a newer one.
+        return () => { ignore = true; };
+    }, [search]);
 
     return (
         <>
-            <title>Ecommerce Project</title>
-            <link rel="icon" type="image/svg+xml" href="home-favicon.png" />
+            <title>{search ? `Search: ${search}` : 'Ecommerce Project'}</title>
+            <link rel="icon" type="image/png" href="/home-favicon.png" />
             <Header cart={cart} />
-
-
 
             <div className="home-page">
                 {loadError && (
@@ -37,7 +46,12 @@ export function HomePage({ cart,loadCart }) {
                         Sorry, we couldn't load the products. Please check the backend is running, then refresh.
                     </div>
                 )}
-                <ProductsGrid products={products} loadCart={loadCart} />
+                {!loadError && search && products?.length === 0 && (
+                    <div className="no-results">
+                        No products match “{search}”.
+                    </div>
+                )}
+                <ProductsGrid products={products ?? []} loadCart={loadCart} />
             </div>
         </>
     );

@@ -159,3 +159,14 @@
 .home-page .load-error {
   margin-top: 80px;
 }
+
+.home-page .no-results {
+  margin: 80px 20px 20px;
+  font-size: 18px;
+  color: rgb(120, 120, 120);
+}
+
+/* Shown for a moment after "Add to Cart" succeeds. */
+.home-page .added-to-cart.is-visible {
+  opacity: 1;
+}

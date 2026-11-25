@@ -20,11 +20,13 @@ beforeEach(() => {
 });
 
 describe('pages that used to crash without a cart', () => {
-    it('renders the tracking page with the cart count', () => {
+    it('renders the tracking page with the cart count', async () => {
+        axios.get.mockRejectedValue({ response: { status: 404 } });
         render(<MemoryRouter><TrackingPage cart={cart} /></MemoryRouter>);
 
         expect(screen.getByText('View all orders')).toBeInTheDocument();
         expect(screen.getByText('5')).toBeInTheDocument();
+        expect(await screen.findByText("We couldn't find that package.")).toBeInTheDocument();
     });
 
     it('renders the 404 page', () => {
