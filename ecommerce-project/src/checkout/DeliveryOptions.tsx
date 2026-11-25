@@ -1,28 +1,32 @@
 import axios from 'axios';
 import dayjs from 'dayjs';
+import { useQueryClient } from '@tanstack/react-query';
+import { refreshCart } from '../api';
 import { formatMoney } from "../utils/money";
-import { useAction } from '../utils/useAction';
-import type { CartItem, DeliveryOption, LoadCart } from '../types';
+import { useSingleMutation } from '../utils/useSingleMutation';
+import type { CartItem, DeliveryOption } from '../types';
 
 type DeliveryOptionsProps = {
     cartItem: CartItem;
     deliveryOptions: DeliveryOption[];
-    loadCart: LoadCart;
 };
 
-export function DeliveryOptions({ cartItem, deliveryOptions, loadCart }: DeliveryOptionsProps) {
-    const { isBusy, error, run } = useAction();
+export function DeliveryOptions({ cartItem, deliveryOptions }: DeliveryOptionsProps) {
+    const queryClient = useQueryClient();
+
+    const changeOption = useSingleMutation<string>({
+        mutationFn: (deliveryOptionId) =>
+            axios.put(`/api/cart-items/${cartItem.productId}`, { deliveryOptionId }),
+        onSuccess: () => refreshCart(queryClient),
+    });
 
     const updateDeliveryOption = (deliveryOptionId: string) => {
         // Clicking the option that's already chosen doesn't need a request.
         if (deliveryOptionId === cartItem.deliveryOptionId) return;
-
-        run(async () => {
-            // Wait for the save before reloading, or the old option comes back.
-            await axios.put(`/api/cart-items/${cartItem.productId}`, { deliveryOptionId });
-            await loadCart();
-        }, 'Sorry, we could not change the delivery option. Please try again.');
+        changeOption.mutate(deliveryOptionId);
     };
+
+    const isBusy = changeOption.isPending;
 
     return (
         <div className={`delivery-options${isBusy ? ' is-busy' : ''}`} aria-busy={isBusy}>
@@ -53,7 +57,11 @@ export function DeliveryOptions({ cartItem, deliveryOptions, loadCart }: Deliver
                     </div>
                 );
             })}
-            {error && <div className="action-error" role="alert">{error}</div>}
+            {changeOption.isError && (
+                <div className="action-error" role="alert">
+                    Sorry, we could not change the delivery option. Please try again.
+                </div>
+            )}
         </div>
     )
 }

@@ -1,38 +1,49 @@
 import axios from 'axios';
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { refreshCart } from '../api';
 import { formatMoney } from '../utils/money';
-import { useAction } from '../utils/useAction';
-import type { CartItemWithProduct, LoadCart } from '../types';
+import { useSingleMutation } from '../utils/useSingleMutation';
+import type { CartItemWithProduct } from '../types';
 
 const MAX_QUANTITY = 99;
 
-type CartItemDetailsProps = {
-    cartItem: CartItemWithProduct;
-    loadCart: LoadCart;
-};
-
-export function CartItemDetails({ cartItem, loadCart }: CartItemDetailsProps) {
+export function CartItemDetails({ cartItem }: { cartItem: CartItemWithProduct }) {
+    const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(false);
     const [quantityText, setQuantityText] = useState(String(cartItem.quantity));
     const [quantityError, setQuantityError] = useState('');
-    // Save and Delete share one, so neither can start while the other is running.
-    const { isBusy, error, setError, run } = useAction();
+
+    const saveMutation = useSingleMutation<number>({
+        mutationFn: (quantity) => axios.put(`/api/cart-items/${cartItem.productId}`, { quantity }),
+        onSuccess: () => refreshCart(queryClient),
+    });
+    const deleteMutation = useSingleMutation({
+        mutationFn: () => axios.delete(`/api/cart-items/${cartItem.productId}`),
+        onSuccess: () => refreshCart(queryClient),
+    });
+    // Neither button can be used while the other's request is running.
+    const isBusy = saveMutation.isPending || deleteMutation.isPending;
+
+    const clearErrors = () => {
+        setQuantityError('');
+        saveMutation.reset();
+        deleteMutation.reset();
+    };
 
     const startEditing = () => {
         setQuantityText(String(cartItem.quantity));
-        setQuantityError('');
-        setError('');
+        clearErrors();
         setIsEditing(true);
     };
 
     const cancelEditing = () => {
-        setQuantityError('');
-        setError('');
+        clearErrors();
         setIsEditing(false);
     };
 
-    const saveQuantity = async () => {
+    const saveQuantity = () => {
         const quantity = Number(quantityText);
         if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) {
             setQuantityError(`Enter a whole number from 1 to ${MAX_QUANTITY}.`);
@@ -43,11 +54,7 @@ export function CartItemDetails({ cartItem, loadCart }: CartItemDetailsProps) {
             cancelEditing();
             return;
         }
-        const saved = await run(async () => {
-            await axios.put(`/api/cart-items/${cartItem.productId}`, { quantity });
-            await loadCart();
-        }, 'Sorry, we could not update the quantity. Please try again.');
-        if (saved) setIsEditing(false);
+        saveMutation.mutate(quantity, () => setIsEditing(false));
     };
 
     const handleQuantityKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -58,12 +65,9 @@ export function CartItemDetails({ cartItem, loadCart }: CartItemDetailsProps) {
         }
     };
 
-    const deleteCartItem = () => run(async () => {
-        await axios.delete(`/api/cart-items/${cartItem.productId}`);
-        await loadCart();
-    }, 'Sorry, we could not remove this item. Please try again.');
-
-    const message = quantityError || error;
+    let message = quantityError;
+    if (!message && saveMutation.isError) message = 'Sorry, we could not update the quantity. Please try again.';
+    if (!message && deleteMutation.isError) message = 'Sorry, we could not remove this item. Please try again.';
 
     return (
         <div className="cart-item-details">
@@ -96,7 +100,7 @@ export function CartItemDetails({ cartItem, loadCart }: CartItemDetailsProps) {
                 {isEditing ? (
                     <button type="button" className="save-quantity-link link-primary"
                         onClick={saveQuantity} disabled={isBusy}>
-                        {isBusy ? 'Saving…' : 'Save'}
+                        {saveMutation.isPending ? 'Saving…' : 'Save'}
                     </button>
                 ) : (
                     <button type="button" className="update-quantity-link link-primary"
@@ -105,7 +109,7 @@ export function CartItemDetails({ cartItem, loadCart }: CartItemDetailsProps) {
                     </button>
                 )}
                 <button type="button" className="delete-quantity-link link-primary"
-                    onClick={deleteCartItem} disabled={isBusy}>
+                    onClick={() => deleteMutation.mutate()} disabled={isBusy}>
                     Delete
                 </button>
             </div>

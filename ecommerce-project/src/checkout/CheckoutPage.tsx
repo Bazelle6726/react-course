@@ -1,77 +1,33 @@
-import axios from 'axios';
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router'
 import { OrderSummary } from './OrderSummary';
 import { PaymentSummary } from './PaymentSummary';
+import { cartQuery, deliveryOptionsQuery, paymentSummaryQuery } from '../api';
 import CheckoutLockIcon from '../assets/images/icons/checkout-lock-icon.png';
 import Logo from '../assets/images/logo.png';
 import MobileLogo from '../assets/images/mobile-logo.png';
-import type { CartItemWithProduct, DeliveryOption, LoadCart, PaymentSummary as PaymentSummaryType } from '../types';
 import './checkoutHeader.css'
 import './checkoutPage.css'
 
-type CheckoutPageProps = {
-    cart: CartItemWithProduct[];
-    /** False until the cart has been fetched for the first time. */
-    isCartLoaded: boolean;
-    loadCart: LoadCart;
-};
+export function CheckoutPage() {
+    const cartResult = useQuery(cartQuery);
+    // Fetched once; they don't change when the cart does.
+    const optionsResult = useQuery(deliveryOptionsQuery);
+    // Fetched again whenever the cart is refreshed (its key starts with 'cart').
+    const summaryResult = useQuery(paymentSummaryQuery);
 
-export function CheckoutPage({ cart, isCartLoaded, loadCart }: CheckoutPageProps) {
-    // null until they arrive.
-    const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[] | null>(null);
-    const [paymentSummary, setPaymentSummary] = useState<PaymentSummaryType | null>(null);
-    const [optionsError, setOptionsError] = useState(false);
-    const [summaryError, setSummaryError] = useState(false);
-
-    // The delivery options don't depend on the cart, so fetch them once.
-    useEffect(() => {
-        let ignore = false;
-
-        axios.get<DeliveryOption[]>('/api/delivery-options?expand=estimatedDeliveryTime')
-            .then((response) => {
-                if (!ignore) setDeliveryOptions(response.data);
-            })
-            .catch((error) => {
-                if (ignore) return;
-                console.error('Could not load the delivery options', error);
-                setOptionsError(true);
-            });
-
-        return () => { ignore = true; };
-    }, []);
-
-    // The totals change whenever the cart does.
-    useEffect(() => {
-        let ignore = false;
-
-        axios.get<PaymentSummaryType>('/api/payment-summary')
-            .then((response) => {
-                if (ignore) return;
-                setPaymentSummary(response.data);
-                setSummaryError(false);
-            })
-            .catch((error) => {
-                if (ignore) return;
-                console.error('Could not load the payment summary', error);
-                setSummaryError(true);
-            });
-
-        // If the cart changes again before this answer arrives, drop it:
-        // the newer request has the right totals.
-        return () => { ignore = true; };
-    }, [cart]);
-
+    const cart = cartResult.data ?? [];
+    const deliveryOptions = optionsResult.data;
     const totalQuantity = cart.reduce((sum, cartItem) => sum + cartItem.quantity, 0);
 
     let content;
-    if (optionsError || summaryError) {
+    if (cartResult.isError || optionsResult.isError || summaryResult.isError) {
         content = (
             <div className="load-error" role="alert">
                 Sorry, we couldn't load your checkout details. Please check the backend is running, then refresh.
             </div>
         );
-    } else if (!isCartLoaded || deliveryOptions === null) {
+    } else if (cartResult.isPending || !deliveryOptions) {
         content = <div className="page-message" role="status">Loading your cart…</div>;
     } else if (cart.length === 0) {
         content = (
@@ -84,9 +40,9 @@ export function CheckoutPage({ cart, isCartLoaded, loadCart }: CheckoutPageProps
     } else {
         content = (
             <div className="checkout-grid">
-                <OrderSummary cart={cart} deliveryOptions={deliveryOptions} loadCart={loadCart} />
+                <OrderSummary cart={cart} deliveryOptions={deliveryOptions} />
 
-                <PaymentSummary paymentSummary={paymentSummary} loadCart={loadCart} />
+                <PaymentSummary paymentSummary={summaryResult.data ?? null} />
             </div>
         );
     }

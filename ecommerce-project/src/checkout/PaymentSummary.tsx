@@ -1,26 +1,31 @@
 import axios from 'axios';
 import { useNavigate } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
+import { refreshCart } from '../api';
 import { formatMoney } from '../utils/money';
-import { useAction } from '../utils/useAction';
-import type { LoadCart, PaymentSummary as PaymentSummaryType } from '../types';
+import { useSingleMutation } from '../utils/useSingleMutation';
+import type { PaymentSummary as PaymentSummaryType } from '../types';
 
-type PaymentSummaryProps = {
-  paymentSummary: PaymentSummaryType | null;
-  loadCart: LoadCart;
-};
-
-export function PaymentSummary({ paymentSummary, loadCart }: PaymentSummaryProps) {
+export function PaymentSummary({ paymentSummary }: { paymentSummary: PaymentSummaryType | null }) {
   const navigate = useNavigate();
-  const { isBusy, error, run } = useAction();
+  const queryClient = useQueryClient();
 
   // The button stays disabled until we've left the page, so a double-click
   // can't place the same order twice.
-  const createOrder = () => run(async () => {
-    await axios.post('/api/orders');
-    await loadCart();
-    // Absolute path: './orders' would resolve to /checkout/orders (a 404).
-    navigate('/orders');
-  }, 'Sorry, we could not place your order. Please try again.');
+  const placeOrder = useSingleMutation({
+    mutationFn: () => axios.post('/api/orders'),
+    onSuccess: () => {
+      // Forget the old order list so the orders page loads one with the new order.
+      queryClient.removeQueries({ queryKey: ['orders'] });
+      // Absolute path: './orders' would resolve to /checkout/orders (a 404).
+      // Leave before the cart reloads, or "Your cart is empty" flashes up first.
+      navigate('/orders');
+      return refreshCart(queryClient);
+    },
+  });
+  const isBusy = placeOrder.isPending;
+  const error = placeOrder.isError ? 'Sorry, we could not place your order. Please try again.' : '';
+  const createOrder = () => placeOrder.mutate();
 
   return (
     <div className="payment-summary">

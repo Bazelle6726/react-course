@@ -1,9 +1,12 @@
-// Double-clicks, empty pages, loading messages and out-of-order responses.
+// Double-clicks, empty pages, loading messages, out-of-order responses and
+// the shared cart cache.
 import { it, expect, describe, vi, beforeEach } from 'vitest';
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { screen, act, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import type { ReactNode } from 'react';
+import { refreshCart } from './api';
+import { Header } from './Components/Header';
 import { PaymentSummary } from './checkout/PaymentSummary';
 import { CartItemDetails } from './checkout/CartItemDetails';
 import { DeliveryOptions } from './checkout/DeliveryOptions';
@@ -13,7 +16,9 @@ import { HomePage } from './Pages/home/HomePage';
 import { OrdersPage } from './Pages/orders/OrdersPage';
 import { OrderProduct } from './Pages/orders/OrderProduct';
 import { TrackingPage } from './Pages/TrackingPage';
-import { axiosDelete, axiosGet, axiosPost, axiosPut, makeCartItem, makeProduct } from './test-utils';
+import {
+    axiosDelete, axiosGet, axiosPost, axiosPut, getCalls, makeCartItem, makeProduct, mockGet, renderWithClient,
+} from './test-utils';
 import type { DeliveryOption, PaymentSummary as PaymentSummaryType } from './types';
 
 vi.mock('axios');
@@ -47,7 +52,7 @@ beforeEach(() => {
 describe('a double-click only sends one request', () => {
     it('Place your order', async () => {
         axiosPost.mockImplementation(never);
-        render(inRouter(<PaymentSummary paymentSummary={summary(1000)} loadCart={vi.fn()} />));
+        renderWithClient(inRouter(<PaymentSummary paymentSummary={summary(1000)} />));
 
         await userEvent.setup().dblClick(screen.getByRole('button', { name: 'Place your order' }));
 
@@ -57,7 +62,7 @@ describe('a double-click only sends one request', () => {
 
     it('Add to Cart on the home page', async () => {
         axiosPost.mockImplementation(never);
-        render(<Product product={socks} loadCart={vi.fn()} />);
+        renderWithClient(<Product product={socks} />);
 
         await userEvent.setup().dblClick(screen.getByTestId('add-to-cart-button'));
 
@@ -68,7 +73,7 @@ describe('a double-click only sends one request', () => {
     it('Add to Cart (buy again) on the orders page', async () => {
         axiosPost.mockImplementation(never);
         const orderProduct = { productId: 'p1', quantity: 1, estimatedDeliveryTimeMs: Date.now(), product: socks };
-        render(inRouter(<OrderProduct orderId="o1" orderProduct={orderProduct} loadCart={vi.fn()} />));
+        renderWithClient(inRouter(<OrderProduct orderId="o1" orderProduct={orderProduct} />));
 
         await userEvent.setup().dblClick(screen.getByRole('button', { name: /Add to Cart/ }));
 
@@ -78,7 +83,7 @@ describe('a double-click only sends one request', () => {
 
     it('Delete in checkout', async () => {
         axiosDelete.mockImplementation(never);
-        render(<CartItemDetails cartItem={cartItem} loadCart={vi.fn()} />);
+        renderWithClient(<CartItemDetails cartItem={cartItem} />);
 
         await userEvent.setup().dblClick(screen.getByRole('button', { name: 'Delete' }));
 
@@ -89,7 +94,7 @@ describe('a double-click only sends one request', () => {
 
     it('choosing a delivery option', async () => {
         axiosPut.mockImplementation(never);
-        render(<DeliveryOptions cartItem={cartItem} deliveryOptions={deliveryOptions} loadCart={vi.fn()} />);
+        renderWithClient(<DeliveryOptions cartItem={cartItem} deliveryOptions={deliveryOptions} />);
 
         await userEvent.setup().dblClick(screen.getByText('Sunday, June 9'));
 
@@ -99,7 +104,7 @@ describe('a double-click only sends one request', () => {
 
 describe('Place your order', () => {
     it('is disabled when there is nothing to order', () => {
-        render(inRouter(<PaymentSummary paymentSummary={summary(0, 0)} loadCart={vi.fn()} />));
+        renderWithClient(inRouter(<PaymentSummary paymentSummary={summary(0, 0)} />));
 
         expect(screen.getByRole('button', { name: 'Place your order' })).toBeDisabled();
     });
@@ -107,7 +112,7 @@ describe('Place your order', () => {
 
 describe('DeliveryOptions', () => {
     it('does not send a request for the option that is already chosen', async () => {
-        render(<DeliveryOptions cartItem={cartItem} deliveryOptions={deliveryOptions} loadCart={vi.fn()} />);
+        renderWithClient(<DeliveryOptions cartItem={cartItem} deliveryOptions={deliveryOptions} />);
 
         await userEvent.setup().click(screen.getByText('Thursday, June 13'));
 
@@ -116,7 +121,7 @@ describe('DeliveryOptions', () => {
 
     it('shows an error on the page when saving fails', async () => {
         axiosPut.mockRejectedValue(new Error('boom'));
-        render(<DeliveryOptions cartItem={cartItem} deliveryOptions={deliveryOptions} loadCart={vi.fn()} />);
+        renderWithClient(<DeliveryOptions cartItem={cartItem} deliveryOptions={deliveryOptions} />);
 
         await userEvent.setup().click(screen.getByText('Sunday, June 9'));
 
@@ -125,56 +130,55 @@ describe('DeliveryOptions', () => {
 });
 
 describe('CheckoutPage', () => {
-    const mockCheckoutData = (paymentSummary: PaymentSummaryType = summary(1000)) => {
-        axiosGet.mockImplementation(async (url) => ({
-            data: url.startsWith('/api/delivery-options') ? deliveryOptions : paymentSummary,
-        }));
-    };
-
     it('says it is loading until the cart has arrived', async () => {
-        mockCheckoutData();
-        render(inRouter(<CheckoutPage cart={[]} isCartLoaded={false} loadCart={vi.fn()} />));
+        axiosGet.mockImplementation(async (url) => {
+            if (url.startsWith('/api/cart-items')) return never();
+            return { data: url.startsWith('/api/delivery-options') ? deliveryOptions : summary(1000) };
+        });
+        renderWithClient(inRouter(<CheckoutPage />));
 
         expect(screen.getByRole('status')).toHaveTextContent('Loading your cart…');
-        await waitFor(() => expect(axiosGet).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(getCalls('/api/payment-summary')).toBe(1));
+        expect(screen.getByRole('status')).toHaveTextContent('Loading your cart…');
         expect(screen.queryByText('Your cart is empty.')).not.toBeInTheDocument();
     });
 
     it('says when the cart is empty and links back to the products', async () => {
-        mockCheckoutData(summary(0, 0));
-        render(inRouter(<CheckoutPage cart={[]} isCartLoaded loadCart={vi.fn()} />));
+        mockGet({ '/api/cart-items': [], '/api/delivery-options': deliveryOptions, '/api/payment-summary': summary(0, 0) });
+        renderWithClient(inRouter(<CheckoutPage />));
 
         expect(await screen.findByText('Your cart is empty.')).toBeInTheDocument();
         expect(screen.getByRole('link', { name: 'View products' })).toHaveAttribute('href', '/');
         expect(screen.queryByRole('button', { name: 'Place your order' })).not.toBeInTheDocument();
     });
 
-    it('fetches the delivery options once, and the totals again when the cart changes', async () => {
-        mockCheckoutData();
-        const { rerender } = render(inRouter(<CheckoutPage cart={[cartItem]} isCartLoaded loadCart={vi.fn()} />));
+    it('fetches the delivery options once, and the cart and totals again when the cart changes', async () => {
+        mockGet({ '/api/cart-items': [cartItem], '/api/delivery-options': deliveryOptions, '/api/payment-summary': summary(1000) });
+        const { queryClient } = renderWithClient(inRouter(<CheckoutPage />));
         await screen.findByText('Order total:');
 
-        rerender(inRouter(<CheckoutPage cart={[{ ...cartItem, quantity: 3 }]} isCartLoaded loadCart={vi.fn()} />));
+        await act(() => refreshCart(queryClient));
 
-        await waitFor(() => {
-            const urls = axiosGet.mock.calls.map(([url]) => url);
-            expect(urls.filter((url) => url.startsWith('/api/delivery-options'))).toHaveLength(1);
-            expect(urls.filter((url) => url === '/api/payment-summary')).toHaveLength(2);
-        });
+        expect(getCalls('/api/delivery-options')).toBe(1);
+        expect(getCalls('/api/cart-items')).toBe(2);
+        expect(getCalls('/api/payment-summary')).toBe(2);
     });
 
     it('ignores old totals that arrive after newer ones', async () => {
         let answerFirstSummary: (value: { data: PaymentSummaryType }) => void = () => {};
         let summaryRequests = 0;
         axiosGet.mockImplementation((url) => {
+            if (url.startsWith('/api/cart-items')) return Promise.resolve({ data: [cartItem] });
             if (url.startsWith('/api/delivery-options')) return Promise.resolve({ data: deliveryOptions });
             summaryRequests += 1;
             if (summaryRequests === 1) return new Promise((resolve) => { answerFirstSummary = resolve; });
             return Promise.resolve({ data: summary(5000) });
         });
 
-        const { rerender } = render(inRouter(<CheckoutPage cart={[cartItem]} isCartLoaded loadCart={vi.fn()} />));
-        rerender(inRouter(<CheckoutPage cart={[{ ...cartItem, quantity: 5 }]} isCartLoaded loadCart={vi.fn()} />));
+        const { queryClient } = renderWithClient(inRouter(<CheckoutPage />));
+        await screen.findByText('Socks');
+        // The cart changes while the first totals are still on their way.
+        await act(() => refreshCart(queryClient));
         expect(await screen.findAllByText('$50.00')).not.toHaveLength(0);
 
         // The first (now out of date) answer finally arrives.
@@ -185,33 +189,64 @@ describe('CheckoutPage', () => {
     });
 });
 
+describe('the shared cart', () => {
+    it('loads once, however many components show it', async () => {
+        mockGet({ '/api/cart-items': [cartItem] });
+        renderWithClient(inRouter(<><Header /><Header /></>));
+
+        expect(await screen.findAllByText('2')).toHaveLength(2);
+        expect(getCalls('/api/cart-items')).toBe(1);
+    });
+
+    it('the header count updates after Add to Cart, with nothing passed between them', async () => {
+        let cart: unknown[] = [];
+        axiosGet.mockImplementation(async () => ({ data: cart }));
+        axiosPost.mockImplementation(async () => {
+            cart = [makeCartItem({ product: socks, quantity: 1 })];
+            return {};
+        });
+        renderWithClient(inRouter(<><Header /><Product product={socks} /></>));
+        const count = () => document.querySelector('.cart-quantity');
+        await waitFor(() => expect(getCalls('/api/cart-items')).toBe(1));
+        expect(count()).toHaveTextContent('0');
+
+        await userEvent.setup().click(screen.getByTestId('add-to-cart-button'));
+
+        await waitFor(() => expect(count()).toHaveTextContent('1'));
+    });
+});
+
 describe('OrdersPage', () => {
     it('says it is loading, then that there are no orders yet', async () => {
         let answer: (value: { data: [] }) => void = () => {};
-        axiosGet.mockImplementation(() => new Promise((resolve) => { answer = resolve; }));
-        render(inRouter(<OrdersPage cart={[]} loadCart={vi.fn()} />));
+        axiosGet.mockImplementation((url) => {
+            if (url.startsWith('/api/cart-items')) return Promise.resolve({ data: [] });
+            return new Promise((resolve) => { answer = resolve; });
+        });
+        renderWithClient(inRouter(<OrdersPage />));
 
         expect(screen.getByRole('status')).toHaveTextContent('Loading your orders…');
 
-        await act(async () => answer({ data: [] }));
+        await waitFor(() => expect(getCalls('/api/orders')).toBe(1));
+        answer({ data: [] });
 
+        const empty = await screen.findByText("You haven't placed any orders yet.");
         expect(screen.queryByRole('status')).not.toBeInTheDocument();
-        expect(screen.getByText("You haven't placed any orders yet.")).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: 'Start shopping' })).toHaveAttribute('href', '/');
+        expect(within(empty).getByRole('link', { name: 'Start shopping' })).toHaveAttribute('href', '/');
     });
 });
 
 describe('loading messages', () => {
     it('home page', () => {
         axiosGet.mockImplementation(never);
-        render(inRouter(<HomePage cart={[]} loadCart={vi.fn()} />));
+        renderWithClient(inRouter(<HomePage />));
 
         expect(screen.getByRole('status')).toHaveTextContent('Loading products…');
     });
 
     it('tracking page', () => {
         axiosGet.mockImplementation(never);
-        render(inRouter(<TrackingPage cart={[]} />));
+        renderWithClient(inRouter(<TrackingPage />));
 
         expect(screen.getByRole('status')).toHaveTextContent('Loading your package…');
     });

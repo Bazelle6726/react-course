@@ -1,19 +1,18 @@
 import { it, expect, describe, vi, beforeEach } from 'vitest';
-import type { Mock } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Product } from './Product';
-import { axiosPost, resolveLater } from '../../test-utils';
-import type { LoadCart, Product as ProductType } from '../../types';
+import { axiosPost, renderWithClient, resolveLater } from '../../test-utils';
+import type { Product as ProductType } from '../../types';
 
 vi.mock('axios');
 
 describe('product component', () => {
 
     let product: ProductType;
-    let loadCart: Mock<LoadCart>;
 
     beforeEach(() => {
+        vi.resetAllMocks();
         product = {
             id: "e43638ce-6aa0-4b85-b27f-e1d07eb678c6",
             image: "images/products/athletic-cotton-socks-6-pairs.jpg",
@@ -25,12 +24,10 @@ describe('product component', () => {
             priceCents: 1090,
             keywords: ["socks", "sports", "apparel"]
         };
-
-        loadCart = vi.fn<LoadCart>();
     });
-        it('displays the product details correctly', () => {
 
-        render(<Product product={product} loadCart={loadCart} />);
+    it('displays the product details correctly', () => {
+        renderWithClient(<Product product={product} />);
 
         expect(
             screen.getByText('Black and Gray Athletic Cotton Socks - 6 Pairs')
@@ -51,13 +48,12 @@ describe('product component', () => {
         expect(
             screen.getByText('87')
         ).toBeInTheDocument();
-
     });
 
     it('adds a product to the cart', async () => {
-
-        const loadCart = vi.fn<LoadCart>();
-        render(<Product product={product} loadCart={loadCart} />);
+        axiosPost.mockResolvedValue({});
+        const { queryClient } = renderWithClient(<Product product={product} />);
+        const refresh = vi.spyOn(queryClient, 'invalidateQueries');
 
         const user = userEvent.setup();
         const addToCartButton = screen.getByTestId('add-to-cart-button');
@@ -70,19 +66,18 @@ describe('product component', () => {
                 quantity: 1
             }
         );
-        expect(loadCart).toHaveBeenCalled();
+        await waitFor(() => expect(refresh).toHaveBeenCalledWith({ queryKey: ['cart'] }));
     });
 
     it('saves to the cart before reloading it', async () => {
         const calls: string[] = [];
         // The save only finishes a moment later, like a real request.
         axiosPost.mockImplementation(() => resolveLater(calls, 'post'));
-        const loadCart = vi.fn(async () => { calls.push('loadCart'); });
-        render(<Product product={product} loadCart={loadCart} />);
+        const { queryClient } = renderWithClient(<Product product={product} />);
+        vi.spyOn(queryClient, 'invalidateQueries').mockImplementation(async () => { calls.push('refresh cart'); });
 
         await userEvent.setup().click(screen.getByTestId('add-to-cart-button'));
 
-        await waitFor(() => expect(loadCart).toHaveBeenCalled());
-        expect(calls).toEqual(['post', 'loadCart']);
+        await waitFor(() => expect(calls).toEqual(['post', 'refresh cart']));
     });
 });

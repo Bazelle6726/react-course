@@ -1,7 +1,7 @@
 import { it, expect, describe, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { axiosGet } from '../test-utils';
+import { axiosGet, mockGet, renderWithClient } from '../test-utils';
 import { TrackingPage } from './TrackingPage';
 import { NotFoundPage } from './NotFoundPage';
 import { HomePage } from './home/HomePage';
@@ -21,22 +21,27 @@ beforeEach(() => {
 
 describe('pages that used to crash without a cart', () => {
     it('renders the tracking page with the cart count', async () => {
-        axiosGet.mockRejectedValue({ response: { status: 404 } });
-        render(<MemoryRouter><TrackingPage cart={cart} /></MemoryRouter>);
+        axiosGet.mockImplementation(async (url) => {
+            if (url.startsWith('/api/cart-items')) return { data: cart };
+            throw { response: { status: 404 } };
+        });
+        renderWithClient(<MemoryRouter><TrackingPage /></MemoryRouter>);
 
         expect(screen.getByText('View all orders')).toBeInTheDocument();
-        expect(screen.getByText('5')).toBeInTheDocument();
+        expect(await screen.findByText('5')).toBeInTheDocument();
         expect(await screen.findByText("We couldn't find that package.")).toBeInTheDocument();
     });
 
     it('renders the 404 page', () => {
-        render(<MemoryRouter><NotFoundPage cart={cart} /></MemoryRouter>);
+        mockGet({ '/api/cart-items': cart });
+        renderWithClient(<MemoryRouter><NotFoundPage /></MemoryRouter>);
 
         expect(screen.getByText('page not found')).toBeInTheDocument();
     });
 
-    it('renders the header with no cart at all', () => {
-        render(<MemoryRouter><Header /></MemoryRouter>);
+    it('renders the header while the cart is still loading', () => {
+        axiosGet.mockImplementation(() => new Promise(() => {}));
+        renderWithClient(<MemoryRouter><Header /></MemoryRouter>);
 
         expect(screen.getByText('0')).toBeInTheDocument();
     });
@@ -45,7 +50,7 @@ describe('pages that used to crash without a cart', () => {
 describe('HomePage when the backend is down', () => {
     it('shows an error message instead of an empty page', async () => {
         axiosGet.mockRejectedValue(new Error('Network Error'));
-        render(<MemoryRouter><HomePage cart={[]} loadCart={vi.fn()} /></MemoryRouter>);
+        renderWithClient(<MemoryRouter><HomePage /></MemoryRouter>);
 
         expect(await screen.findByRole('alert')).toHaveTextContent("couldn't load the products");
     });

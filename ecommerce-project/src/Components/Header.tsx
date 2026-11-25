@@ -1,30 +1,21 @@
 import type { FormEvent } from 'react';
 import { NavLink, useNavigate, useSearchParams } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
+import { cartQuery } from '../api';
 import CartIcon from '../assets/images/icons/cart-icon.png';
 import SearchIcon from '../assets/images/icons/search-icon.png';
 import LogoWhite from '../assets/images/icons/logo-white.png';
 import MobileLogoWhite from '../assets/images/icons/mobile-logo-white.png';
 import './header.css';
 
-type HeaderProps = {
-    cart?: {
-        productId: string;
-        quantity: number;
-        deliveryOptionId: string;
-    }[];
-};
-
-
-export function Header({ cart = [] }: HeaderProps) {
+export function Header() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const currentSearch = searchParams.get('search') ?? '';
+    // Shares the cached cart with every other component that uses it.
+    const { data: cart = [] } = useQuery(cartQuery);
 
-    let totalQuantity = 0;
-
-    cart.forEach((cartItem) =>{
-        totalQuantity += cartItem.quantity;
-    });
+    const totalQuantity = cart.reduce((sum, cartItem) => sum + cartItem.quantity, 0);
 
     const search = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();

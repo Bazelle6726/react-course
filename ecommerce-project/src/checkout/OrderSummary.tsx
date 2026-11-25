@@ -1,15 +1,14 @@
 import dayjs from 'dayjs';
 import { CartItemDetails } from './CartItemDetails';
 import { DeliveryOptions } from './DeliveryOptions';
-import type { CartItemWithProduct, DeliveryOption, LoadCart } from '../types';
+import type { CartItemWithProduct, DeliveryOption } from '../types';
 
 type OrderSummaryProps = {
   cart: CartItemWithProduct[];
   deliveryOptions: DeliveryOption[];
-  loadCart: LoadCart;
 };
 
-export function OrderSummary({ cart, deliveryOptions, loadCart }: OrderSummaryProps) {
+export function OrderSummary({ cart, deliveryOptions }: OrderSummaryProps) {
   return (
     <div className="order-summary">
       {deliveryOptions.length > 0 && cart.map((cartItem) => {
@@ -30,9 +29,9 @@ export function OrderSummary({ cart, deliveryOptions, loadCart }: OrderSummaryPr
               <img className="product-image"
                 src={cartItem.product.image} alt={cartItem.product.name} />
 
-              <CartItemDetails cartItem={cartItem} loadCart={loadCart} />
+              <CartItemDetails cartItem={cartItem} />
 
-              <DeliveryOptions cartItem={cartItem} deliveryOptions={deliveryOptions} loadCart={loadCart} />
+              <DeliveryOptions cartItem={cartItem} deliveryOptions={deliveryOptions} />
             </div>
           </div>
         );

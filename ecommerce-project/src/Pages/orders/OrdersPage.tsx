@@ -1,56 +1,32 @@
 import dayjs from 'dayjs';
-import axios from 'axios';
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { Header } from '../../Components/Header';
+import { ordersQuery } from '../../api';
 import { formatMoney } from '../../utils/money'
 import { OrderProduct } from './OrderProduct';
-import type { CartItem, LoadCart, Order } from '../../types';
 import './ordersPage.css';
 
-type OrdersPageProps = {
-    cart: CartItem[];
-    loadCart: LoadCart;
-};
-
-export function OrdersPage({ cart, loadCart }: OrdersPageProps) {
-    // null until the orders arrive.
-    const [orders, setOrders] = useState<Order[] | null>(null);
-    const [loadError, setLoadError] = useState(false);
-
-    useEffect(() => {
-        let ignore = false;
-
-        axios.get<Order[]>('/api/orders?expand=products')
-            .then((response) => {
-                if (!ignore) setOrders(response.data);
-            })
-            .catch((error) => {
-                if (ignore) return;
-                console.error('Could not load orders', error);
-                setLoadError(true);
-            });
-
-        return () => { ignore = true; };
-    }, []);
+export function OrdersPage() {
+    const { data: orders, isPending, isError } = useQuery(ordersQuery);
 
     return (
         <>
             <title>Orders</title>
             <link rel="icon" type="image/png" href="/orders-favicon.png" />
 
-            <Header cart={cart} />
+            <Header />
 
             <div className="orders-page">
                 <div className="page-title">Your Orders</div>
 
-                {loadError && (
+                {isError && (
                     <div className="load-error" role="alert">
                         Sorry, we couldn't load your orders. Please check the backend is running, then refresh.
                     </div>
                 )}
 
-                {!loadError && orders === null && (
+                {isPending && (
                     <div className="page-message" role="status">Loading your orders…</div>
                 )}
 
@@ -90,7 +66,6 @@ export function OrdersPage({ cart, loadCart }: OrdersPageProps) {
                                             key={orderProduct.product.id}
                                             orderId={order.id}
                                             orderProduct={orderProduct}
-                                            loadCart={loadCart}
                                         />
                                     ))}
                                 </div>

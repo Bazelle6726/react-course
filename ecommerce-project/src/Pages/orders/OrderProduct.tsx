@@ -2,41 +2,41 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import BuyAgain from '../../assets/images/icons/buy-again.png';
-import { useAction } from '../../utils/useAction';
-import type { LoadCart, OrderProduct as OrderProductType } from '../../types';
+import { refreshCart } from '../../api';
+import { useSingleMutation } from '../../utils/useSingleMutation';
+import type { OrderProduct as OrderProductType } from '../../types';
 
 const ADDED_MESSAGE_MS = 2000;
 
 type OrderProductProps = {
     orderId: string;
     orderProduct: OrderProductType;
-    loadCart: LoadCart;
 };
 
-export function OrderProduct({ orderId, orderProduct, loadCart }: OrderProductProps) {
+export function OrderProduct({ orderId, orderProduct }: OrderProductProps) {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [justAdded, setJustAdded] = useState(false);
     const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-    const { isBusy, error, run } = useAction();
 
+    // Cancel the "✓ Added" timer if we leave the page.
     useEffect(() => () => clearTimeout(hideTimer.current), []);
 
-    const buyAgain = async () => {
-        const added = await run(async () => {
-            await axios.post('/api/cart-items', {
-                productId: orderProduct.product.id,
-                quantity: 1
-            });
-            await loadCart();
-        }, 'Sorry, we could not add this to your cart. Please try again.');
+    const addToCart = useSingleMutation({
+        mutationFn: () => axios.post('/api/cart-items', { productId: orderProduct.product.id, quantity: 1 }),
+        onSuccess: () => refreshCart(queryClient),
+    });
 
-        if (added) {
-            setJustAdded(true);
-            clearTimeout(hideTimer.current);
-            hideTimer.current = setTimeout(() => setJustAdded(false), ADDED_MESSAGE_MS);
-        }
-    };
+    const buyAgain = () => addToCart.mutate(undefined, () => {
+        setJustAdded(true);
+        clearTimeout(hideTimer.current);
+        hideTimer.current = setTimeout(() => setJustAdded(false), ADDED_MESSAGE_MS);
+    });
+
+    const isBusy = addToCart.isPending;
+    const error = addToCart.isError ? 'Sorry, we could not add this to your cart. Please try again.' : '';
 
     let buyAgainText = 'Add to Cart';
     if (isBusy) buyAgainText = 'Adding…';

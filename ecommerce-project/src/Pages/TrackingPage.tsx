@@ -1,13 +1,11 @@
-import axios from 'axios';
 import dayjs from 'dayjs';
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
 import { Header } from '../Components/Header';
-import type { CartItem, Order } from '../types';
+import { orderQuery } from '../api';
 import './trackingPage.css';
 
 type Status = 'Preparing' | 'Shipped' | 'Delivered';
-type LoadError = 'not-found' | 'network';
 
 // Where a package is between the order being placed and its delivery date.
 function getProgress(orderTimeMs: number, deliveryTimeMs: number) {
@@ -31,32 +29,15 @@ function isNotFound(error: unknown) {
     return response?.status === 404;
 }
 
-export function TrackingPage({ cart }: { cart: CartItem[] }) {
-    const { orderId, productId } = useParams();
-    const [order, setOrder] = useState<Order | null>(null);
-    const [loadError, setLoadError] = useState<LoadError | null>(null);
-
-    useEffect(() => {
-        let ignore = false;
-
-        axios.get<Order>(`/api/orders/${orderId}?expand=products`)
-            .then((response) => {
-                if (!ignore) setOrder(response.data);
-            })
-            .catch((error) => {
-                if (ignore) return;
-                console.error('Could not load the order', error);
-                setLoadError(isNotFound(error) ? 'not-found' : 'network');
-            });
-
-        return () => { ignore = true; };
-    }, [orderId]);
+export function TrackingPage() {
+    const { orderId = '', productId } = useParams();
+    const { data: order, error } = useQuery(orderQuery(orderId));
 
     const orderProduct = order?.products.find((item) => item.productId === productId);
-    const notFound = loadError === 'not-found' || (order && !orderProduct);
+    const notFound = isNotFound(error) || (order && !orderProduct);
 
     let content = null;
-    if (loadError === 'network') {
+    if (error && !notFound) {
         content = (
             <div className="load-error" role="alert">
                 Sorry, we couldn't load this package. Please check the backend is running, then refresh.
@@ -70,7 +51,7 @@ export function TrackingPage({ cart }: { cart: CartItem[] }) {
         );
     } else if (!order) {
         content = <div className="tracking-message" role="status">Loading your package…</div>;
-    } else if (order && orderProduct) {
+    } else if (orderProduct) {
         const percent = getProgress(order.orderTimeMs, orderProduct.estimatedDeliveryTimeMs);
         const status = getStatus(percent);
         const deliveryDate = dayjs(orderProduct.estimatedDeliveryTimeMs).format('dddd, MMMM D');
@@ -115,7 +96,7 @@ export function TrackingPage({ cart }: { cart: CartItem[] }) {
             <title>Tracking</title>
             <link rel="icon" type="image/png" href="/tracking-favicon.png" />
 
-            <Header cart={cart} />
+            <Header />
 
             <div className="tracking-page">
                 <div className="order-tracking">

@@ -55,5 +55,3 @@ export type PaymentSummary = {
   totalCostCents: number;
 };
 
-/** Re-fetches the cart from the backend. */
-export type LoadCart = () => Promise<void>;

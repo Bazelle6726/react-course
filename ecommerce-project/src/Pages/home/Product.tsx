@@ -1,46 +1,40 @@
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { refreshCart } from '../../api';
 import { formatMoney } from '../../utils/money';
-import { useAction } from '../../utils/useAction';
-import type { LoadCart, Product as ProductType } from '../../types';
+import { useSingleMutation } from '../../utils/useSingleMutation';
+import type { Product as ProductType } from '../../types';
 
 const ADDED_MESSAGE_MS = 2000;
 
-type ProductProps = {
-    product: ProductType;
-    loadCart: LoadCart;
-};
-
-export function Product({ product, loadCart }: ProductProps) {
+export function Product({ product }: { product: ProductType }) {
+    const queryClient = useQueryClient();
     const [quantity, setQuantity] = useState(1);
     const [showAdded, setShowAdded] = useState(false);
     const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-    const { isBusy, error, run } = useAction();
 
+    // Cancel the "Added" timer if the product disappears (e.g. a new search).
     useEffect(() => () => clearTimeout(hideTimer.current), []);
 
-    const addToCart = async () => {
-        const added = await run(async () => {
-            // Wait for the save before reloading, or the cart count lags behind.
-            await axios.post('/api/cart-items', {
-                productId: product.id,
-                quantity
-            });
-            await loadCart();
-        }, 'Sorry, we could not add this to your cart.');
+    const addToCart = useSingleMutation({
+        mutationFn: () => axios.post('/api/cart-items', { productId: product.id, quantity }),
+        // Returning the promise keeps the button busy until the cart count has updated.
+        onSuccess: () => refreshCart(queryClient),
+    });
 
-        if (added) {
-            // Show "Added" for a moment; adding again restarts the timer.
-            setShowAdded(true);
-            clearTimeout(hideTimer.current);
-            hideTimer.current = setTimeout(() => setShowAdded(false), ADDED_MESSAGE_MS);
-        }
-    };
+    const handleAddToCart = () => addToCart.mutate(undefined, () => {
+        // Show "Added" for a moment; adding again restarts the timer.
+        setShowAdded(true);
+        clearTimeout(hideTimer.current);
+        hideTimer.current = setTimeout(() => setShowAdded(false), ADDED_MESSAGE_MS);
+    });
 
     const selectQuantity = (event: ChangeEvent<HTMLSelectElement>) => {
         setQuantity(Number(event.target.value));
     };
+
     return (
         <div className="product-container"
         data-testid="product-container">
@@ -92,10 +86,12 @@ export function Product({ product, loadCart }: ProductProps) {
 
             <button className="add-to-cart-button button-primary"
             data-testid="add-to-cart-button"
-                onClick={addToCart} disabled={isBusy}>
-                {isBusy ? 'Adding…' : 'Add to Cart'}
+                onClick={handleAddToCart} disabled={addToCart.isPending}>
+                {addToCart.isPending ? 'Adding…' : 'Add to Cart'}
             </button>
-            {error && <div className="action-error" role="alert">{error}</div>}
+            {addToCart.isError && (
+                <div className="action-error" role="alert">Sorry, we could not add this to your cart.</div>
+            )}
         </div>
     );
 }

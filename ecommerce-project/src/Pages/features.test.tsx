@@ -1,5 +1,5 @@
 import { it, expect, describe, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, within, waitFor, act } from '@testing-library/react';
+import { screen, within, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router';
 import type { ReactNode } from 'react';
@@ -10,7 +10,9 @@ import { OrdersPage } from './orders/OrdersPage';
 import { Header } from '../Components/Header';
 import { CheckoutPage } from '../checkout/CheckoutPage';
 import { CartItemDetails } from '../checkout/CartItemDetails';
-import { axiosGet, axiosPost, axiosPut, makeCartItem, makeProduct } from '../test-utils';
+import {
+    axiosGet, axiosPost, axiosPut, getCalls, makeCartItem, makeProduct, mockGet, renderWithClient,
+} from '../test-utils';
 import type { Order } from '../types';
 
 vi.mock('axios');
@@ -24,7 +26,7 @@ function ShowLocation() {
     return <div data-testid="location">{location.pathname + location.search}</div>;
 }
 
-const renderAt = (path: string, routes: ReactNode) => render(
+const renderAt = (path: string, routes: ReactNode) => renderWithClient(
     <MemoryRouter initialEntries={[path]}>
         <Routes>{routes}</Routes>
         <ShowLocation />
@@ -37,11 +39,12 @@ beforeEach(() => {
 });
 
 describe('TrackingPage', () => {
-    const trackingRoute = <Route path="tracking/:orderId/:productId" element={<TrackingPage cart={[]} />} />;
+    const trackingRoute = <Route path="tracking/:orderId/:productId" element={<TrackingPage />} />;
 
     const mockOrder = (orderTimeMs: number, deliveryTimeMs: number) => {
-        axiosGet.mockResolvedValue({
-            data: {
+        mockGet({
+            '/api/cart-items': [],
+            '/api/orders/o1': {
                 id: 'o1',
                 orderTimeMs,
                 products: [
@@ -99,8 +102,12 @@ describe('TrackingPage', () => {
 });
 
 describe('Search', () => {
+    beforeEach(() => {
+        mockGet({ '/api/cart-items': [], '/api/products': [ball] });
+    });
+
     it('searching from the header goes to the home page with the term', async () => {
-        renderAt('/orders', <Route path="*" element={<Header cart={[]} />} />);
+        renderAt('/orders', <Route path="*" element={<Header />} />);
         const user = userEvent.setup();
 
         await user.type(screen.getByRole('searchbox', { name: 'Search products' }), '  basket ball {Enter}');
@@ -109,7 +116,7 @@ describe('Search', () => {
     });
 
     it('an empty search goes back to all products', async () => {
-        renderAt('/?search=socks', <Route path="*" element={<Header cart={[]} />} />);
+        renderAt('/?search=socks', <Route path="*" element={<Header />} />);
         const user = userEvent.setup();
 
         expect(screen.getByRole('searchbox')).toHaveValue('socks');
@@ -120,16 +127,15 @@ describe('Search', () => {
     });
 
     it('the home page asks the backend for matching products', async () => {
-        axiosGet.mockResolvedValue({ data: [ball] });
-        renderAt('/?search=ball', <Route index element={<HomePage cart={[]} loadCart={vi.fn()} />} />);
+        renderAt('/?search=ball', <Route index element={<HomePage />} />);
 
         expect(await screen.findByText('Basketball')).toBeInTheDocument();
         expect(axiosGet).toHaveBeenCalledWith('/api/products', { params: { search: 'ball' } });
     });
 
     it('says when nothing matches', async () => {
-        axiosGet.mockResolvedValue({ data: [] });
-        renderAt('/?search=zzz', <Route index element={<HomePage cart={[]} loadCart={vi.fn()} />} />);
+        mockGet({ '/api/cart-items': [], '/api/products': [] });
+        renderAt('/?search=zzz', <Route index element={<HomePage />} />);
 
         expect(await screen.findByText('No products match “zzz”.')).toBeInTheDocument();
     });
@@ -141,7 +147,7 @@ describe('"Added" message after Add to Cart', () => {
     it('appears after adding and hides again after 2 seconds', async () => {
         vi.useFakeTimers({ shouldAdvanceTime: true });
         axiosPost.mockResolvedValue({});
-        render(<Product product={socks} loadCart={vi.fn()} />);
+        renderWithClient(<Product product={socks} />);
         const added = screen.getByTestId('added-to-cart');
         expect(added).not.toHaveClass('is-visible');
 
@@ -154,7 +160,7 @@ describe('"Added" message after Add to Cart', () => {
 
     it('does not appear when adding fails', async () => {
         axiosPost.mockRejectedValue(new Error('boom'));
-        render(<Product product={socks} loadCart={vi.fn()} />);
+        renderWithClient(<Product product={socks} />);
 
         await userEvent.setup().click(screen.getByTestId('add-to-cart-button'));
 
@@ -169,22 +175,24 @@ describe('OrdersPage', () => {
         products: [{ productId: 'p1', quantity: 1, estimatedDeliveryTimeMs: Date.now() + DAY, product: socks }],
     };
 
-    it('Buy again adds one to the cart and confirms', async () => {
-        axiosGet.mockResolvedValue({ data: [order] });
+    beforeEach(() => {
+        mockGet({ '/api/cart-items': [], '/api/orders': [order] });
+    });
+
+    it('Buy again adds one to the cart, reloads the cart and confirms', async () => {
         axiosPost.mockResolvedValue({});
-        const loadCart = vi.fn();
-        renderAt('/orders', <Route path="orders" element={<OrdersPage cart={[]} loadCart={loadCart} />} />);
+        renderAt('/orders', <Route path="orders" element={<OrdersPage />} />);
 
         await userEvent.setup().click(await screen.findByRole('button', { name: /Add to Cart/ }));
 
         expect(axiosPost).toHaveBeenCalledWith('/api/cart-items', { productId: 'p1', quantity: 1 });
-        expect(loadCart).toHaveBeenCalled();
         expect(await screen.findByText('✓ Added')).toBeInTheDocument();
+        // Once when the page opened, once after adding.
+        expect(getCalls('/api/cart-items')).toBe(2);
     });
 
     it('Track package opens that package\'s tracking page', async () => {
-        axiosGet.mockResolvedValue({ data: [order] });
-        renderAt('/orders', <Route path="orders" element={<OrdersPage cart={[]} loadCart={vi.fn()} />} />);
+        renderAt('/orders', <Route path="orders" element={<OrdersPage />} />);
 
         await userEvent.setup().click(await screen.findByRole('button', { name: 'Track package' }));
 
@@ -193,24 +201,24 @@ describe('OrdersPage', () => {
 });
 
 describe('Checkout header item count', () => {
-    beforeEach(() => {
-        axiosGet.mockImplementation(async (url) => ({ data: url.startsWith('/api/delivery-options') ? [] : null }));
+    const mockCheckout = (cart: unknown[]) => mockGet({
+        '/api/cart-items': cart,
+        '/api/delivery-options': [],
+        '/api/payment-summary': null,
     });
 
     it('shows the total quantity in the cart', async () => {
-        const cart = [makeCartItem({ quantity: 2 }), makeCartItem({ product: ball, quantity: 3 })];
-        renderAt('/checkout', <Route path="checkout" element={<CheckoutPage cart={cart} isCartLoaded loadCart={vi.fn()} />} />);
+        mockCheckout([makeCartItem({ quantity: 2 }), makeCartItem({ product: ball, quantity: 3 })]);
+        renderAt('/checkout', <Route path="checkout" element={<CheckoutPage />} />);
 
-        expect(screen.getByRole('link', { name: '5 items' })).toBeInTheDocument();
-        await waitFor(() => expect(axiosGet).toHaveBeenCalledTimes(2));
+        expect(await screen.findByRole('link', { name: '5 items' })).toBeInTheDocument();
     });
 
     it('says "1 item" for a single item', async () => {
-        const cart = [makeCartItem({ quantity: 1 })];
-        renderAt('/checkout', <Route path="checkout" element={<CheckoutPage cart={cart} isCartLoaded loadCart={vi.fn()} />} />);
+        mockCheckout([makeCartItem({ quantity: 1 })]);
+        renderAt('/checkout', <Route path="checkout" element={<CheckoutPage />} />);
 
-        expect(screen.getByRole('link', { name: '1 item' })).toBeInTheDocument();
-        await waitFor(() => expect(axiosGet).toHaveBeenCalledTimes(2));
+        expect(await screen.findByRole('link', { name: '1 item' })).toBeInTheDocument();
     });
 });
 
@@ -219,8 +227,8 @@ describe('Updating a quantity in checkout', () => {
 
     it('saves a new quantity with Enter', async () => {
         axiosPut.mockResolvedValue({});
-        const loadCart = vi.fn();
-        render(<CartItemDetails cartItem={cartItem} loadCart={loadCart} />);
+        const { queryClient } = renderWithClient(<CartItemDetails cartItem={cartItem} />);
+        const refresh = vi.spyOn(queryClient, 'invalidateQueries');
         const user = userEvent.setup();
 
         await user.click(screen.getByRole('button', { name: 'Update' }));
@@ -230,13 +238,13 @@ describe('Updating a quantity in checkout', () => {
         await user.type(box, '5{Enter}');
 
         expect(axiosPut).toHaveBeenCalledWith('/api/cart-items/p1', { quantity: 5 });
-        expect(loadCart).toHaveBeenCalled();
         await waitFor(() => expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument());
+        expect(refresh).toHaveBeenCalledWith({ queryKey: ['cart'] });
     });
 
     it('saves with the Save button', async () => {
         axiosPut.mockResolvedValue({});
-        render(<CartItemDetails cartItem={cartItem} loadCart={vi.fn()} />);
+        renderWithClient(<CartItemDetails cartItem={cartItem} />);
         const user = userEvent.setup();
 
         await user.click(screen.getByRole('button', { name: 'Update' }));
@@ -248,7 +256,7 @@ describe('Updating a quantity in checkout', () => {
     });
 
     it('rejects 0 and keeps editing', async () => {
-        render(<CartItemDetails cartItem={cartItem} loadCart={vi.fn()} />);
+        renderWithClient(<CartItemDetails cartItem={cartItem} />);
         const user = userEvent.setup();
 
         await user.click(screen.getByRole('button', { name: 'Update' }));
@@ -261,7 +269,7 @@ describe('Updating a quantity in checkout', () => {
     });
 
     it('Escape cancels without saving', async () => {
-        render(<CartItemDetails cartItem={cartItem} loadCart={vi.fn()} />);
+        renderWithClient(<CartItemDetails cartItem={cartItem} />);
         const user = userEvent.setup();
 
         await user.click(screen.getByRole('button', { name: 'Update' }));
@@ -273,7 +281,7 @@ describe('Updating a quantity in checkout', () => {
 
     it('keeps the box open and shows an error if saving fails', async () => {
         axiosPut.mockRejectedValue(new Error('boom'));
-        render(<CartItemDetails cartItem={cartItem} loadCart={vi.fn()} />);
+        renderWithClient(<CartItemDetails cartItem={cartItem} />);
         const user = userEvent.setup();
 
         await user.click(screen.getByRole('button', { name: 'Update' }));
