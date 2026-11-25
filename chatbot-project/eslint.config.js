@@ -25,7 +25,10 @@ export default tseslint.config(
     rules: {
       ...js.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // The TypeScript-aware version: the plain rule wrongly flags parameter
+      // names inside type annotations such as (text: string) => void.
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
