@@ -8,14 +8,16 @@ import { OrdersPage } from './Pages/orders/OrdersPage';
 import { TrackingPage } from './Pages/TrackingPage';
 import { NotFoundPage } from './Pages/NotFoundPage';
 
+import type { CartItemWithProduct } from './types';
+
 import './App.css'
 
 function App() {
- const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState<CartItemWithProduct[]>([]);
 
   const loadCart = async () => {
     try {
-      const response = await axios.get('/api/cart-items?expand=product');
+      const response = await axios.get<CartItemWithProduct[]>('/api/cart-items?expand=product');
       setCart(response.data);
     } catch (error) {
       // Keep showing the last cart we had; pages report their own load errors.

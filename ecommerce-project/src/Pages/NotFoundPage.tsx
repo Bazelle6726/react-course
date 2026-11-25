@@ -1,7 +1,8 @@
 import { Header } from '../Components/Header';
+import type { CartItem } from '../types';
 import './notFoundPage.css';
 
-export function NotFoundPage({ cart }) {
+export function NotFoundPage({ cart }: { cart: CartItem[] }) {
     return (
         <>
             <title>404 Page Not Found</title>

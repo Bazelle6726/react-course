@@ -6,24 +6,30 @@ import { PaymentSummary } from './PaymentSummary';
 import CheckoutLockIcon from '../assets/images/icons/checkout-lock-icon.png';
 import Logo from '../assets/images/logo.png';
 import MobileLogo from '../assets/images/mobile-logo.png';
+import type { CartItemWithProduct, DeliveryOption, LoadCart, PaymentSummary as PaymentSummaryType } from '../types';
 import './checkoutHeader.css'
 import './checkoutPage.css'
 
-export function CheckoutPage({ cart, loadCart }) {
-    const [deliveryOptions, setDeliveryOptions] = useState([]);
-    const [paymentSummary, setPaymentSummary] = useState(null);
+type CheckoutPageProps = {
+    cart: CartItemWithProduct[];
+    loadCart: LoadCart;
+};
+
+export function CheckoutPage({ cart, loadCart }: CheckoutPageProps) {
+    const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[]>([]);
+    const [paymentSummary, setPaymentSummary] = useState<PaymentSummaryType | null>(null);
     const [loadError, setLoadError] = useState(false);
 
     useEffect(() => {
         const fetchCheckoutData = async () => {
             try {
-                let response = await axios.get(
+                const optionsResponse = await axios.get<DeliveryOption[]>(
                     '/api/delivery-options?expand=estimatedDeliveryTime'
                 );
-                setDeliveryOptions(response.data);
+                setDeliveryOptions(optionsResponse.data);
 
-                response = await axios.get('/api/payment-summary');
-                setPaymentSummary(response.data);
+                const summaryResponse = await axios.get<PaymentSummaryType>('/api/payment-summary');
+                setPaymentSummary(summaryResponse.data);
                 setLoadError(false);
             } catch (error) {
                 console.error('Could not load checkout data', error);

@@ -1,8 +1,15 @@
 import dayjs from 'dayjs';
 import { CartItemDetails } from './CartItemDetails';
 import { DeliveryOptions } from './DeliveryOptions';
+import type { CartItemWithProduct, DeliveryOption, LoadCart } from '../types';
 
-export function OrderSummary({ cart, deliveryOptions, loadCart }) {
+type OrderSummaryProps = {
+  cart: CartItemWithProduct[];
+  deliveryOptions: DeliveryOption[];
+  loadCart: LoadCart;
+};
+
+export function OrderSummary({ cart, deliveryOptions, loadCart }: OrderSummaryProps) {
   return (
     <div className="order-summary">
       {deliveryOptions.length > 0 && cart.map((cartItem) => {

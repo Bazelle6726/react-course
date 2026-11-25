@@ -1,18 +1,19 @@
 import { it, expect, describe, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { HomePage } from './HomePage';
-import axios from 'axios';
+import { axiosGet } from '../../test-utils';
+import type { LoadCart } from '../../types';
 
 vi.mock('axios');
 
 describe ('HomePage component', () => {
-    let loadCart;
+    let loadCart: Mock<LoadCart>;
     beforeEach(() => {
-        loadCart = vi.fn();
+        loadCart = vi.fn<LoadCart>();
 
-        axios.get.mockImplementation(async (urlPath) => {
+        axiosGet.mockImplementation(async (urlPath) => {
             if (urlPath === '/api/products') {
                 return {
                     data : [{
@@ -39,6 +40,7 @@ describe ('HomePage component', () => {
   }]
                 }
             }
+            return { data: [] };
         });
     });
     it('displays the products correct', async () => {

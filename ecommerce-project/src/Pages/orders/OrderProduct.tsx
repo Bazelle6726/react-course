@@ -3,13 +3,20 @@ import dayjs from 'dayjs';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import BuyAgain from '../../assets/images/icons/buy-again.png';
+import type { LoadCart, OrderProduct as OrderProductType } from '../../types';
 
 const ADDED_MESSAGE_MS = 2000;
 
-export function OrderProduct({ orderId, orderProduct, loadCart }) {
+type OrderProductProps = {
+    orderId: string;
+    orderProduct: OrderProductType;
+    loadCart: LoadCart;
+};
+
+export function OrderProduct({ orderId, orderProduct, loadCart }: OrderProductProps) {
     const navigate = useNavigate();
     const [justAdded, setJustAdded] = useState(false);
-    const hideTimer = useRef(null);
+    const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     useEffect(() => () => clearTimeout(hideTimer.current), []);
 

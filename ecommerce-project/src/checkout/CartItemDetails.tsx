@@ -1,10 +1,17 @@
 import axios from 'axios';
 import { useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import { formatMoney } from '../utils/money';
+import type { CartItemWithProduct, LoadCart } from '../types';
 
 const MAX_QUANTITY = 99;
 
-export function CartItemDetails({ cartItem, loadCart }) {
+type CartItemDetailsProps = {
+    cartItem: CartItemWithProduct;
+    loadCart: LoadCart;
+};
+
+export function CartItemDetails({ cartItem, loadCart }: CartItemDetailsProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [quantityText, setQuantityText] = useState(String(cartItem.quantity));
     const [quantityError, setQuantityError] = useState('');
@@ -40,7 +47,7 @@ export function CartItemDetails({ cartItem, loadCart }) {
         }
     };
 
-    const handleQuantityKeyDown = (event) => {
+    const handleQuantityKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
             saveQuantity();
         } else if (event.key === 'Escape') {

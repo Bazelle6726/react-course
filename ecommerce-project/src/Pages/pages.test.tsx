@@ -1,7 +1,7 @@
 import { it, expect, describe, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import axios from 'axios';
+import { axiosGet } from '../test-utils';
 import { TrackingPage } from './TrackingPage';
 import { NotFoundPage } from './NotFoundPage';
 import { HomePage } from './home/HomePage';
@@ -21,7 +21,7 @@ beforeEach(() => {
 
 describe('pages that used to crash without a cart', () => {
     it('renders the tracking page with the cart count', async () => {
-        axios.get.mockRejectedValue({ response: { status: 404 } });
+        axiosGet.mockRejectedValue({ response: { status: 404 } });
         render(<MemoryRouter><TrackingPage cart={cart} /></MemoryRouter>);
 
         expect(screen.getByText('View all orders')).toBeInTheDocument();
@@ -44,7 +44,7 @@ describe('pages that used to crash without a cart', () => {
 
 describe('HomePage when the backend is down', () => {
     it('shows an error message instead of an empty page', async () => {
-        axios.get.mockRejectedValue(new Error('Network Error'));
+        axiosGet.mockRejectedValue(new Error('Network Error'));
         render(<MemoryRouter><HomePage cart={[]} loadCart={vi.fn()} /></MemoryRouter>);
 
         expect(await screen.findByRole('alert')).toHaveTextContent("couldn't load the products");

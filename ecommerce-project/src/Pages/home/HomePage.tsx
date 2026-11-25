@@ -3,12 +3,19 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { Header } from '../../Components/Header';
 import { ProductsGrid } from './ProductsGrid';
+import type { CartItem, LoadCart, Product } from '../../types';
 import './HomePage.css'
 
-export function HomePage({ cart, loadCart }) {
+type HomePageProps = {
+    cart: CartItem[];
+    loadCart: LoadCart;
+};
+
+export function HomePage({ cart, loadCart }: HomePageProps) {
     const [searchParams] = useSearchParams();
     const search = searchParams.get('search') ?? '';
-    const [products, setProducts] = useState(null);
+    // null until the first response arrives, so "no results" isn't shown while loading.
+    const [products, setProducts] = useState<Product[] | null>(null);
     const [loadError, setLoadError] = useState(false);
 
     useEffect(() => {
@@ -17,8 +24,8 @@ export function HomePage({ cart, loadCart }) {
         const getHomeData = async () => {
             try {
                 const response = search
-                    ? await axios.get('/api/products', { params: { search } })
-                    : await axios.get('/api/products');
+                    ? await axios.get<Product[]>('/api/products', { params: { search } })
+                    : await axios.get<Product[]>('/api/products');
                 if (!ignore) {
                     setProducts(response.data);
                     setLoadError(false);

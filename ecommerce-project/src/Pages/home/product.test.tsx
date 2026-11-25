@@ -1,15 +1,17 @@
 import { it, expect, describe, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Product } from './Product';
-import axios from 'axios';
+import { axiosPost, resolveLater } from '../../test-utils';
+import type { LoadCart, Product as ProductType } from '../../types';
 
 vi.mock('axios');
 
 describe('product component', () => {
 
-    let product;
-    let loadCart;
+    let product: ProductType;
+    let loadCart: Mock<LoadCart>;
 
     beforeEach(() => {
         product = {
@@ -24,7 +26,7 @@ describe('product component', () => {
             keywords: ["socks", "sports", "apparel"]
         };
 
-        loadCart = vi.fn();
+        loadCart = vi.fn<LoadCart>();
     });
         it('displays the product details correctly', () => {
 
@@ -54,14 +56,14 @@ describe('product component', () => {
 
     it('adds a product to the cart', async () => {
 
-        const loadCart = vi.fn();
+        const loadCart = vi.fn<LoadCart>();
         render(<Product product={product} loadCart={loadCart} />);
 
         const user = userEvent.setup();
         const addToCartButton = screen.getByTestId('add-to-cart-button');
         await user.click(addToCartButton);
 
-        expect(axios.post).toHaveBeenCalledWith(
+        expect(axiosPost).toHaveBeenCalledWith(
             '/api/cart-items',
             {
                 productId: 'e43638ce-6aa0-4b85-b27f-e1d07eb678c6',
@@ -72,11 +74,9 @@ describe('product component', () => {
     });
 
     it('saves to the cart before reloading it', async () => {
-        const calls = [];
+        const calls: string[] = [];
         // The save only finishes a moment later, like a real request.
-        axios.post.mockImplementation(() => new Promise((resolve) => {
-            setTimeout(() => { calls.push('post'); resolve({}); }, 20);
-        }));
+        axiosPost.mockImplementation(() => resolveLater(calls, 'post'));
         const loadCart = vi.fn(async () => { calls.push('loadCart'); });
         render(<Product product={product} loadCart={loadCart} />);
 

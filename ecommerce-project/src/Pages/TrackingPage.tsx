@@ -3,38 +3,50 @@ import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { Header } from '../Components/Header';
+import type { CartItem, Order } from '../types';
 import './trackingPage.css';
 
+type Status = 'Preparing' | 'Shipped' | 'Delivered';
+type LoadError = 'not-found' | 'network';
+
 // Where a package is between the order being placed and its delivery date.
-function getProgress(orderTimeMs, deliveryTimeMs) {
+function getProgress(orderTimeMs: number, deliveryTimeMs: number) {
     const total = deliveryTimeMs - orderTimeMs;
     const elapsed = Date.now() - orderTimeMs;
     const percent = total > 0 ? (elapsed / total) * 100 : 100;
     return Math.min(Math.max(percent, 0), 100);
 }
 
-function getStatus(percent) {
+function getStatus(percent: number): Status {
     if (percent >= 100) return 'Delivered';
     if (percent >= 33) return 'Shipped';
     return 'Preparing';
 }
 
-export function TrackingPage({ cart }) {
+const STATUSES: Status[] = ['Preparing', 'Shipped', 'Delivered'];
+
+// True for an axios error whose response was a 404.
+function isNotFound(error: unknown) {
+    const response = (error as { response?: { status?: number } } | null)?.response;
+    return response?.status === 404;
+}
+
+export function TrackingPage({ cart }: { cart: CartItem[] }) {
     const { orderId, productId } = useParams();
-    const [order, setOrder] = useState(null);
-    const [loadError, setLoadError] = useState(null);
+    const [order, setOrder] = useState<Order | null>(null);
+    const [loadError, setLoadError] = useState<LoadError | null>(null);
 
     useEffect(() => {
         let ignore = false;
 
-        axios.get(`/api/orders/${orderId}?expand=products`)
+        axios.get<Order>(`/api/orders/${orderId}?expand=products`)
             .then((response) => {
                 if (!ignore) setOrder(response.data);
             })
             .catch((error) => {
                 if (ignore) return;
                 console.error('Could not load the order', error);
-                setLoadError(error.response?.status === 404 ? 'not-found' : 'network');
+                setLoadError(isNotFound(error) ? 'not-found' : 'network');
             });
 
         return () => { ignore = true; };
@@ -56,7 +68,7 @@ export function TrackingPage({ cart }) {
                 We couldn't find that package.
             </div>
         );
-    } else if (orderProduct) {
+    } else if (order && orderProduct) {
         const percent = getProgress(order.orderTimeMs, orderProduct.estimatedDeliveryTimeMs);
         const status = getStatus(percent);
         const deliveryDate = dayjs(orderProduct.estimatedDeliveryTimeMs).format('dddd, MMMM D');
@@ -78,7 +90,7 @@ export function TrackingPage({ cart }) {
                 <img className="product-image" src={orderProduct.product.image} alt={orderProduct.product.name} />
 
                 <div className="progress-labels-container">
-                    {['Preparing', 'Shipped', 'Delivered'].map((label) => (
+                    {STATUSES.map((label) => (
                         <div key={label}
                             className={`progress-label${label === status ? ' current-status' : ''}`}>
                             {label}

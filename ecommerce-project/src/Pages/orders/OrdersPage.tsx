@@ -4,14 +4,20 @@ import { useState, useEffect } from 'react';
 import { Header } from '../../Components/Header';
 import { formatMoney } from '../../utils/money'
 import { OrderProduct } from './OrderProduct';
+import type { CartItem, LoadCart, Order } from '../../types';
 import './ordersPage.css';
 
-export function OrdersPage({ cart, loadCart }) {
-    const [orders, setOrders] = useState([]);
+type OrdersPageProps = {
+    cart: CartItem[];
+    loadCart: LoadCart;
+};
+
+export function OrdersPage({ cart, loadCart }: OrdersPageProps) {
+    const [orders, setOrders] = useState<Order[]>([]);
     const [loadError, setLoadError] = useState(false);
 
     useEffect(() => {
-        axios.get('/api/orders?expand=products')
+        axios.get<Order[]>('/api/orders?expand=products')
             .then((response) => {
                 setOrders(response.data);
             })

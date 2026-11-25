@@ -1,13 +1,20 @@
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import { formatMoney } from '../../utils/money';
+import type { LoadCart, Product as ProductType } from '../../types';
 
 const ADDED_MESSAGE_MS = 2000;
 
-export function Product({ product, loadCart }) {
+type ProductProps = {
+    product: ProductType;
+    loadCart: LoadCart;
+};
+
+export function Product({ product, loadCart }: ProductProps) {
     const [quantity, setQuantity] = useState(1);
     const [showAdded, setShowAdded] = useState(false);
-    const hideTimer = useRef(null);
+    const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     useEffect(() => () => clearTimeout(hideTimer.current), []);
 
@@ -30,7 +37,7 @@ export function Product({ product, loadCart }) {
         }
     };
 
-                const selectQuantity = (event) => {
+                const selectQuantity = (event: ChangeEvent<HTMLSelectElement>) => {
                     const quantitySelected = Number(event.target.value);
                     setQuantity(quantitySelected);
                 };

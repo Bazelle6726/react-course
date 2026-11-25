@@ -1,8 +1,15 @@
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { formatMoney } from "../utils/money";
+import type { CartItem, DeliveryOption, LoadCart } from '../types';
 
-export function DeliveryOptions({ cartItem, deliveryOptions, loadCart }) {
+type DeliveryOptionsProps = {
+    cartItem: CartItem;
+    deliveryOptions: DeliveryOption[];
+    loadCart: LoadCart;
+};
+
+export function DeliveryOptions({ cartItem, deliveryOptions, loadCart }: DeliveryOptionsProps) {
     return (
         <div className="delivery-options">
             <div className="delivery-options-title">

@@ -3,14 +3,15 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import dayjs from 'dayjs';
-import axios from 'axios';
 import { PaymentSummary } from './PaymentSummary';
 import { DeliveryOptions } from './DeliveryOptions';
 import { OrderSummary } from './OrderSummary';
+import { axiosPost, axiosPut, makeCartItem, makeProduct, resolveLater } from '../test-utils';
+import type { DeliveryOption, LoadCart, PaymentSummary as PaymentSummaryType } from '../types';
 
 vi.mock('axios');
 
-const paymentSummary = {
+const paymentSummary: PaymentSummaryType = {
     totalItems: 1,
     productCostCents: 1090,
     shippingCostCents: 0,
@@ -19,17 +20,15 @@ const paymentSummary = {
     totalCostCents: 1199,
 };
 
-const deliveryOptions = [
+const deliveryOptions: DeliveryOption[] = [
     { id: '1', deliveryDays: 7, priceCents: 0, estimatedDeliveryTimeMs: new Date(2030, 5, 13).getTime() },
     { id: '2', deliveryDays: 3, priceCents: 499, estimatedDeliveryTimeMs: new Date(2030, 5, 9).getTime() },
 ];
 
-const cartItem = {
-    productId: 'p1',
+const cartItem = makeCartItem({
     quantity: 2,
-    deliveryOptionId: '1',
-    product: { id: 'p1', name: 'Socks', image: 'socks.jpg', priceCents: 1090 },
-};
+    product: makeProduct({ id: 'p1', name: 'Socks', image: 'socks.jpg', priceCents: 1090 }),
+});
 
 beforeEach(() => {
     vi.resetAllMocks();
@@ -38,7 +37,7 @@ beforeEach(() => {
 });
 
 describe('PaymentSummary', () => {
-    const renderAtCheckout = (loadCart) => render(
+    const renderAtCheckout = (loadCart: LoadCart) => render(
         <MemoryRouter initialEntries={['/checkout']}>
             <Routes>
                 <Route path="checkout" element={<PaymentSummary paymentSummary={paymentSummary} loadCart={loadCart} />} />
@@ -49,19 +48,19 @@ describe('PaymentSummary', () => {
     );
 
     it('goes to /orders after placing an order', async () => {
-        axios.post.mockResolvedValue({});
+        axiosPost.mockResolvedValue({});
         const loadCart = vi.fn();
         renderAtCheckout(loadCart);
 
         await userEvent.setup().click(screen.getByText('Place your order'));
 
-        expect(axios.post).toHaveBeenCalledWith('/api/orders');
+        expect(axiosPost).toHaveBeenCalledWith('/api/orders');
         expect(loadCart).toHaveBeenCalled();
         expect(await screen.findByText('Orders page')).toBeInTheDocument();
     });
 
     it('stays on checkout and tells the user when the order fails', async () => {
-        axios.post.mockRejectedValue(new Error('server down'));
+        axiosPost.mockRejectedValue(new Error('server down'));
         const loadCart = vi.fn();
         renderAtCheckout(loadCart);
 
@@ -82,17 +81,15 @@ describe('DeliveryOptions', () => {
     });
 
     it('saves the new option before reloading the cart', async () => {
-        const calls = [];
+        const calls: string[] = [];
         // The save only finishes a moment later, like a real request.
-        axios.put.mockImplementation(() => new Promise((resolve) => {
-            setTimeout(() => { calls.push('put'); resolve({}); }, 20);
-        }));
+        axiosPut.mockImplementation(() => resolveLater(calls, 'put'));
         const loadCart = vi.fn(async () => { calls.push('loadCart'); });
         render(<DeliveryOptions cartItem={cartItem} deliveryOptions={deliveryOptions} loadCart={loadCart} />);
 
         await userEvent.setup().click(screen.getByText('Sunday, June 9'));
 
-        expect(axios.put).toHaveBeenCalledWith('/api/cart-items/p1', { deliveryOptionId: '2' });
+        expect(axiosPut).toHaveBeenCalledWith('/api/cart-items/p1', { deliveryOptionId: '2' });
         await waitFor(() => expect(loadCart).toHaveBeenCalled());
         expect(calls).toEqual(['put', 'loadCart']);
     });
