@@ -1,0 +1,10 @@
+{
+  "property": "cart-update-quantity",
+  "counterexample": [
+    0,
+    1.1
+  ],
+  "error": "PUT quantity 1.1 answered 200: expected true to be false // Object.is equality",
+  "seed": 1558374293,
+  "path": "2:0:1:1:0:0"
+}

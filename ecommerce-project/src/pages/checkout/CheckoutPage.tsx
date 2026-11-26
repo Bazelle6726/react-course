@@ -9,7 +9,8 @@ import './CheckoutPage.css';
 
 export function CheckoutPage() {
     const cartResult = useQuery(cartQuery);
-    // Fetched once; they don't change when the cart does.
+    // Not tied to the cart, so cart changes don't refetch them. They still
+    // refresh when you return to the tab, which keeps the dates current.
     const optionsResult = useQuery(deliveryOptionsQuery);
     // Fetched again whenever the cart is refreshed (its key starts with 'cart').
     const summaryResult = useQuery(paymentSummaryQuery);

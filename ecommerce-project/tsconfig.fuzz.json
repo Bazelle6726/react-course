@@ -1,0 +1,11 @@
+{
+  // Type-checks the fuzz tests and the Trust Pyramid lint config:
+  //   npx tsc -p tsconfig.fuzz.json
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.fuzz.tsbuildinfo",
+    "jsx": "react-jsx",
+    "noEmit": true
+  },
+  "include": ["fuzz", "vitest.fuzz.config.ts", "src/utils/products.ts", "src/types.ts"]
+}

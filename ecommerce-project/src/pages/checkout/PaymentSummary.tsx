@@ -1,7 +1,6 @@
-import axios from 'axios';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { refreshCart } from '../../api';
+import { placeOrder as sendOrder, refreshCart } from '../../api';
 import { formatMoney } from '../../utils/money';
 import { useSingleMutation } from '../../utils/useSingleMutation';
 import type { PaymentSummary as PaymentSummaryType } from '../../types';
@@ -13,7 +12,7 @@ export function PaymentSummary({ paymentSummary }: { paymentSummary: PaymentSumm
     // The button stays disabled until we've left the page, so a double-click
     // can't place the same order twice.
     const placeOrder = useSingleMutation({
-        mutationFn: () => axios.post('/api/orders'),
+        mutationFn: () => sendOrder(),
         onSuccess: () => {
             // Forget the old order list so the orders page loads one with the new order.
             queryClient.removeQueries({ queryKey: ['orders'] });

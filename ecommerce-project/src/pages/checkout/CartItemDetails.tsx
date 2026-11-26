@@ -1,8 +1,7 @@
-import axios from 'axios';
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { cartChange, refreshCart } from '../../api';
+import { cartChange, refreshCart, removeFromCart, updateCartItem } from '../../api';
 import { formatMoney } from '../../utils/money';
 import { useSingleMutation } from '../../utils/useSingleMutation';
 import type { CartItemWithProduct } from '../../types';
@@ -18,14 +17,14 @@ export function CartItemDetails({ cartItem }: { cartItem: CartItemWithProduct })
     // The new quantity shows straight away, and goes back if saving fails.
     const saveMutation = useSingleMutation(cartChange(
         queryClient,
-        (quantity: number) => axios.put(`/api/cart-items/${cartItem.productId}`, { quantity }),
+        (quantity: number) => updateCartItem(cartItem.productId, { quantity }),
         (cart, quantity) => cart.map((item) =>
             item.productId === cartItem.productId ? { ...item, quantity } : item),
     ));
     // Not instant: if the item vanished and then the delete failed, it would
     // come back with nowhere to show the error.
     const deleteMutation = useSingleMutation({
-        mutationFn: () => axios.delete(`/api/cart-items/${cartItem.productId}`),
+        mutationFn: () => removeFromCart(cartItem.productId),
         onSuccess: () => refreshCart(queryClient),
     });
     // Neither button can be used while the other's request is running.

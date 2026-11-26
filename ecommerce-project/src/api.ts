@@ -90,3 +90,16 @@ export async function refreshCart(queryClient: QueryClient) {
     await queryClient.cancelQueries({ queryKey: ['cart'] });
     return queryClient.invalidateQueries({ queryKey: ['cart'] });
 }
+
+// Changes to the cart and orders. Components send these through
+// useSingleMutation; nothing outside this file imports axios.
+export const addToCart = (productId: string, quantity: number) =>
+    axios.post('/api/cart-items', { productId, quantity });
+
+export const updateCartItem = (productId: string, changes: { quantity?: number; deliveryOptionId?: string }) =>
+    axios.put(`/api/cart-items/${productId}`, changes);
+
+export const removeFromCart = (productId: string) =>
+    axios.delete(`/api/cart-items/${productId}`);
+
+export const placeOrder = () => axios.post('/api/orders');

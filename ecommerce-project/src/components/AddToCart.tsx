@@ -1,7 +1,6 @@
-import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { cartChange } from '../api';
+import { addToCart as sendAddToCart, cartChange } from '../api';
 import { useSingleMutation } from '../utils/useSingleMutation';
 import type { Product } from '../types';
 
@@ -24,7 +23,7 @@ export function AddToCart({ product }: { product: Product }) {
 
     const addToCart = useSingleMutation(cartChange(
         queryClient,
-        (amount: number) => axios.post('/api/cart-items', { productId: product.id, quantity: amount }),
+        (amount: number) => sendAddToCart(product.id, amount),
         (cart, amount) => {
             const inCart = cart.some((item) => item.productId === product.id);
             return inCart

@@ -1,0 +1,20 @@
+{
+  "property": "cart-whole-cents",
+  "counterexample": [
+    [
+      {
+        "action": "add",
+        "product": 0,
+        "quantity": 1.1
+      },
+      {
+        "action": "add",
+        "product": 0,
+        "quantity": 0
+      }
+    ]
+  ],
+  "error": "payment summary totalItems is 1.1: expected false to be true // Object.is equality",
+  "seed": 451654473,
+  "path": "0:1:1:2:1:2:3:3:3:3"
+}

@@ -1,7 +1,6 @@
-import axios from 'axios';
 import dayjs from 'dayjs';
 import { useQueryClient } from '@tanstack/react-query';
-import { cartChange } from '../../api';
+import { cartChange, updateCartItem } from '../../api';
 import { formatMoney } from '../../utils/money';
 import { useSingleMutation } from '../../utils/useSingleMutation';
 import type { CartItem, DeliveryOption } from '../../types';
@@ -18,7 +17,7 @@ export function DeliveryOptions({ cartItem, deliveryOptions }: DeliveryOptionsPr
     const changeOption = useSingleMutation(cartChange(
         queryClient,
         (deliveryOptionId: string) =>
-            axios.put(`/api/cart-items/${cartItem.productId}`, { deliveryOptionId }),
+            updateCartItem(cartItem.productId, { deliveryOptionId }),
         (cart, deliveryOptionId) => cart.map((item) =>
             item.productId === cartItem.productId ? { ...item, deliveryOptionId } : item),
     ));

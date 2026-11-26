@@ -1,10 +1,9 @@
-import axios from 'axios';
 import dayjs from 'dayjs';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import BuyAgain from '../../assets/images/icons/buy-again.png';
-import { refreshCart } from '../../api';
+import { addToCart as sendAddToCart, refreshCart } from '../../api';
 import { useSingleMutation } from '../../utils/useSingleMutation';
 import type { OrderProduct as OrderProductType } from '../../types';
 
@@ -25,7 +24,7 @@ export function OrderProduct({ orderId, orderProduct }: OrderProductProps) {
     useEffect(() => () => clearTimeout(hideTimer.current), []);
 
     const addToCart = useSingleMutation({
-        mutationFn: () => axios.post('/api/cart-items', { productId: orderProduct.product.id, quantity: 1 }),
+        mutationFn: () => sendAddToCart(orderProduct.product.id, 1),
         onSuccess: () => refreshCart(queryClient),
     });
 
